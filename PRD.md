@@ -94,7 +94,7 @@ A local web app with a split-pane editor. The left pane accepts free-form text i
 - No auth in MVP — all requests are anonymous
 - Streaming is implemented via Convex HTTP actions (not queries/mutations) since they support streaming responses
 - The LLM provider is dependency injected into the program at runtime (with Effect v4's dependency injection model / ExecutionPlan in its AI module)
-- The backend uses **Effect v4** (`effect-smol`) — source is vendored at `vendor/effect-smol` as a git subtree for LLM reference
+- The backend uses **Effect v4** (`effect-smol`) — source is vendored at `vendor/effect-smol` as a git subtree for LLM context only, not imported directly
 - TanStack Start handles routing and SSR shell; most logic is client-side
 - Deployed on Vercel; Convex is its own hosted backend
 
