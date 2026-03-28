@@ -15,8 +15,14 @@ const config = defineConfig({
     tailwindcss(),
     tanstackStart(),
     nitro({ preset: 'vercel' }),
-    viteReact(),
+    viteReact({ babel: { plugins: ['babel-plugin-react-compiler'] } }),
   ],
+  test: {
+    include: ['src/**/*.test.{ts,tsx}'],
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test-setup.ts'],
+  },
 })
 
 export default config
