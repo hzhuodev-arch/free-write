@@ -2,16 +2,36 @@ import type { KeyboardEvent } from 'react'
 import CodeMirror, { EditorView } from '@uiw/react-codemirror'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
+import { tags as t } from '@lezer/highlight'
 
 interface EditorPaneProps {
   content: string
   onChange: (value: string) => void
   onSave: () => void
   locked: boolean
+  dark: boolean
 }
 
-// Extensions are stable — defined outside the component to avoid re-creating on every render
-const extensions = [
+function makeHighlight(dark: boolean) {
+  return syntaxHighlighting(
+    HighlightStyle.define([
+      { tag: t.heading1, fontWeight: '600' },
+      { tag: t.heading2, fontWeight: '600' },
+      { tag: t.heading3, fontWeight: '600' },
+      {
+        tag: [t.processingInstruction, t.punctuation],
+        color: dark ? '#52525b' : '#a1a1aa',
+      },
+      { tag: t.monospace, color: dark ? '#93c5fd' : '#1d4ed8' },
+      { tag: t.strong, fontWeight: '600' },
+      { tag: t.emphasis, fontStyle: 'italic' },
+      { tag: [t.link, t.url], color: dark ? '#60a5fa' : '#2563eb' },
+    ]),
+  )
+}
+
+const baseExtensions = [
   markdown({ base: markdownLanguage, codeLanguages: languages }),
   EditorView.lineWrapping,
 ]
@@ -21,9 +41,10 @@ export default function EditorPane({
   onChange,
   onSave,
   locked,
+  dark,
 }: EditorPaneProps) {
-  // Handle Ctrl/Cmd+S on the container so the shortcut is testable and works
-  // regardless of whether the CodeMirror keymap intercepts it first.
+  const extensions = [...baseExtensions, makeHighlight(dark)]
+
   function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if ((e.metaKey || e.ctrlKey) && e.key === 's') {
       e.preventDefault()

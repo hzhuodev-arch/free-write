@@ -30,6 +30,7 @@ const defaultProps = {
   onChange: () => {},
   onSave: () => {},
   locked: false,
+  dark: false,
 }
 
 describe('EditorPane', () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import EditorPane from '../components/EditorPane'
 import PreviewPane from '../components/PreviewPane'
@@ -8,22 +8,50 @@ export const Route = createFileRoute('/')({ component: EditorPage })
 
 type Mode = 'format' | 'restructure'
 
-const SAMPLE_CONTENT = `morning notes — project kickoff
+const SAMPLE_CONTENT = `# Morning Notes — Project Kickoff
 
-things to cover today
-  - align on scope, make sure everyone is on the same page about what we're actually shipping
-  - the backend is mostly done but the api contracts keep changing, need to freeze them
-  - design review got pushed to thursday, which means the implementation window shrinks
+## Today's Agenda
 
-open questions
-  what happens if the user loses connection mid-stream? do we restore the original or keep the partial?
-  probably restore the original. consistency > partial state.
+- Align on scope — ensure the team shares a clear picture of what we're shipping
+- Backend largely complete; API contracts keep shifting — freeze them today
+- Design review pushed to Thursday, compressing the implementation window
 
-also need to follow up with sarah about the staging environment credentials. she mentioned there was a new rotation policy.
+## Open Questions
 
-general thought — the hardest part of this project isn't the tech, it's the scope creep. every conversation introduces a new "small" feature that somehow takes a week. need to get better at writing down what's out of scope explicitly.`
+If the user loses connection mid-stream — do we restore the original content or keep the partial output?
+
+> Decision: restore the original. Consistency beats partial state.
+
+## Follow-ups
+
+Follow up with Sarah regarding staging environment credentials — she mentioned a new \`rotation policy\` is in effect.
+
+## General Thought
+
+The hardest part of this project isn't the technology — it's *scope creep*. Every conversation introduces a "small" feature that quietly consumes a week. Explicitly documenting what is out of scope from the start is essential.`
+
+function useDark() {
+  const [dark, setDark] = useState(() =>
+    typeof document !== 'undefined' &&
+    document.documentElement.classList.contains('dark'),
+  )
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setDark(document.documentElement.classList.contains('dark'))
+    })
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
+    return () => observer.disconnect()
+  }, [])
+
+  return dark
+}
 
 function EditorPage() {
+  const dark = useDark()
   const [content, setContent] = useState(SAMPLE_CONTENT)
   const [mode, setMode] = useState<Mode>('format')
   // locked and streaming will be owned by useEditorSession (issue #8)
@@ -44,6 +72,7 @@ function EditorPage() {
               // will be wired to useEditorSession in issue #8
             }}
             locked={locked}
+            dark={dark}
           />
         </div>
         <div className="flex-1 overflow-hidden">

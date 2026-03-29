@@ -16,7 +16,9 @@
   },
   "dependencies": {
     "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/language": "^6.12.3",
     "@codemirror/language-data": "^6.5.2",
+    "@lezer/highlight": "^1.2.3",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
     "@tanstack/react-router": "latest",
