@@ -1,11 +1,11 @@
-import { Link } from '@tanstack/react-router'
-import ThemeToggle from './ThemeToggle'
+import { Link } from "@tanstack/react-router";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
   return (
     <header className="sticky top-0 z-50 flex h-12 shrink-0 items-center border-b border-zinc-200 bg-white px-5 dark:border-zinc-800 dark:bg-zinc-950">
       <div className="flex items-center gap-2">
-        <div className="flex h-[26px] w-[26px] items-center justify-center rounded-md bg-zinc-900 dark:bg-zinc-100">
+        <div className="flex h-6.5 w-6.5 items-center justify-center rounded-md bg-zinc-900 dark:bg-zinc-100">
           <svg
             viewBox="0 0 14 14"
             className="h-3.5 w-3.5 fill-white dark:fill-zinc-900"
@@ -26,5 +26,5 @@ export default function Header() {
         <ThemeToggle />
       </div>
     </header>
-  )
+  );
 }

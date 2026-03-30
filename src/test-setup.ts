@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom/vitest'
+import "@testing-library/jest-dom/vitest";
 
 // CodeMirror uses ResizeObserver internally; jsdom doesn't provide it
 class MockResizeObserver {
@@ -6,4 +6,4 @@ class MockResizeObserver {
   unobserve() {}
   disconnect() {}
 }
-global.ResizeObserver = MockResizeObserver
+global.ResizeObserver = MockResizeObserver;

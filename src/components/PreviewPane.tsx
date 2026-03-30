@@ -1,10 +1,10 @@
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import rehypeHighlight from 'rehype-highlight'
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
 
 interface PreviewPaneProps {
-  content: string
-  streaming: boolean
+  content: string;
+  streaming: boolean;
 }
 
 export default function PreviewPane({ content, streaming }: PreviewPaneProps) {
@@ -16,24 +16,27 @@ export default function PreviewPane({ content, streaming }: PreviewPaneProps) {
         </span>
 
         {streaming && (
-          <div
-            role="status"
+          <output
             aria-label="Formatting in progress"
+            aria-live="polite"
             className="ml-auto flex items-center gap-1.5"
           >
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
             <span className="text-[11px] text-zinc-400">Formatting…</span>
-          </div>
+          </output>
         )}
       </div>
 
       <div className="flex-1 overflow-auto bg-white px-9 py-7 dark:bg-[#09090b]">
         <div className="preview-md">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeHighlight]}
+          >
             {content}
           </ReactMarkdown>
         </div>
       </div>
     </div>
-  )
+  );
 }
