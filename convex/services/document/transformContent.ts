@@ -8,7 +8,13 @@ import type { Mode } from "../../shared/types";
 
 const AiPlan = ExecutionPlan.make(
   {
-    provide: MODELS["kimi-k2.5"],
+    provide: MODELS["gemini-3.1-flash-preview"],
+    attempts: 2,
+    schedule: Schedule.exponential("100 millis", 1.5),
+    while: (e: AiError.AiError) => e.reason.isRetryable,
+  },
+  {
+    provide: MODELS["claude-sonnet-4-6"],
     attempts: 2,
     schedule: Schedule.exponential("100 millis", 1.5),
     while: (e: AiError.AiError) => e.reason.isRetryable,
@@ -17,11 +23,6 @@ const AiPlan = ExecutionPlan.make(
     provide: MODELS["minimax-m2.5"],
     attempts: 2,
     schedule: Schedule.fixed("100 millis"),
-    while: (e: AiError.AiError) => e.reason.isRetryable,
-  },
-  {
-    provide: MODELS["claude-sonnet-4-6"],
-    attempts: 1,
     while: (e: AiError.AiError) => e.reason.isRetryable,
   },
 );
@@ -47,7 +48,8 @@ const constructPrompt = (content: string, mode: Mode) => {
   return Prompt.make([
     {
       role: "system",
-      content: "You are a markdown formatter. Output ONLY valid markdown, no commentary.",
+      content:
+        "You are a markdown formatter. Output ONLY valid markdown, no commentary.",
     },
     {
       role: "user",
@@ -62,10 +64,7 @@ export const transformContent = (content: string, mode: Mode) =>
 
     const result = yield* LanguageModel.generateText({
       prompt,
-    }).pipe(
-      Effect.withExecutionPlan(AiPlan),
-      Effect.provide(LLMLayer),
-    );
+    }).pipe(Effect.withExecutionPlan(AiPlan), Effect.provide(LLMLayer));
 
     return result.text;
   });

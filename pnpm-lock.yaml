@@ -17,6 +17,9 @@ importers:
       '@codemirror/language-data':
         specifier: ^6.5.2
         version: 6.5.2
+      '@codemirror/view':
+        specifier: ^6.40.0
+        version: 6.40.0
       '@effect/ai-anthropic':
         specifier: ^4.0.0-beta.42
         version: 4.0.0-beta.43(effect@4.0.0-beta.43)
