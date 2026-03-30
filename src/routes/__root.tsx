@@ -2,9 +2,9 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
-import Header from "../components/Header";
+import Header from "@/components/Header";
 
-import appCss from "../styles.css?url";
+import appCss from "@/styles.css?url";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 

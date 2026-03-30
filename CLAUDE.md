@@ -30,3 +30,20 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
   needed. Always curl https://ai-gateway.vercel.sh/v1/models first; never trust model IDs from memory
 - For durable agent loops or untrusted code: use Workflow (pause/resume/state) + Sandbox; use Vercel MCP for secure infra access
 <!-- VERCEL BEST PRACTICES END -->
+
+
+## React
+
+React Compiler is enabled. Do not add `useMemo`, `useCallback`, or `memo` unless it's something that cannot be handled by the compiler
+
+## Fixing Problems
+
+When addressing a bug or issue:
+
+1. Identify the root cause instead of only treating symptoms.
+2. Avoid adding patches, hacks, or conditional fixes on top of unclear behavior.
+3. Prefer simplifying or refactoring the existing logic over layering new complexity.
+4. Ensure the fix improves overall code clarity and maintainability.
+5. If the root cause is unclear, investigate further rather than guessing.
+
+A fix is not complete if it only makes the issue disappear without explaining why it occurred.

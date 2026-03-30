@@ -1,5 +1,6 @@
+import { MODES, type Mode } from "convex/shared/types";
 import { Loader2 } from "lucide-react";
-import { MODES, type Mode } from "../types";
+
 
 interface ToolbarProps {
   mode: Mode;

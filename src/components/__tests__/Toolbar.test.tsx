@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import Toolbar from "../Toolbar";
+import Toolbar from "@/components/Toolbar";
 
 describe("Toolbar", () => {
   it("fires onModeChange with the new mode when toggling", async () => {

@@ -1,9 +1,10 @@
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
+import { keymap } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
-import type { KeyboardEvent } from "react";
+import { useRef } from "react";
 
 interface EditorPaneProps {
   content: string;
@@ -12,7 +13,7 @@ interface EditorPaneProps {
   locked: boolean;
 }
 
-const extensions = [
+const baseExtensions = [
   markdown({ base: markdownLanguage, codeLanguages: languages }),
   EditorView.lineWrapping,
   syntaxHighlighting(
@@ -38,12 +39,21 @@ export default function EditorPane({
   onSave,
   locked,
 }: EditorPaneProps) {
-  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-      e.preventDefault();
-      if (!locked) onSave();
-    }
-  }
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+
+  const extensions = [
+    ...baseExtensions,
+    keymap.of([
+      {
+        key: "Mod-s",
+        run: () => {
+          onSaveRef.current();
+          return true;
+        },
+      },
+    ]),
+  ];
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -55,7 +65,6 @@ export default function EditorPane({
 
       <section
         aria-label="Text editor"
-        onKeyDown={handleKeyDown}
         className={[
           "flex-1 overflow-auto transition-opacity duration-150",
           locked ? "pointer-events-none opacity-40" : "",

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import EditorPane from "../EditorPane";
+import EditorPane from "@/components/EditorPane";
 
 vi.mock("@uiw/react-codemirror", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@uiw/react-codemirror")>();

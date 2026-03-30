@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { defineConfig } from 'vite'
 import { devtools } from '@tanstack/devtools-vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
@@ -17,6 +18,11 @@ const config = defineConfig({
     nitro({ preset: 'vercel' }),
     viteReact({ babel: { plugins: ['babel-plugin-react-compiler'] } }),
   ],
+  resolve: {
+    alias: {
+      '@convex': path.resolve(import.meta.dirname, './convex'),
+    },
+  },
   test: {
     include: ['src/**/*.test.{ts,tsx}'],
     environment: 'jsdom',
