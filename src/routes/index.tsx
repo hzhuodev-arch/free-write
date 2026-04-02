@@ -1,10 +1,17 @@
+import { api } from "@convex/_generated/api";
+import { HTTP_ROUTES } from "@convex/shared/httpRoutes";
+import { useStream } from "@convex-dev/persistent-text-streaming/react";
 import { createFileRoute } from "@tanstack/react-router";
+import { type RefObject, useEffect, useEffectEvent } from "react";
 import { useEditorSession } from "#/hooks/use-editor-session";
+import { useScrollSync } from "#/hooks/use-scroll-sync";
 import EditorPane from "@/components/EditorPane";
 import PreviewPane from "@/components/PreviewPane";
 import Toolbar from "@/components/Toolbar";
 
-export const Route = createFileRoute("/")({ component: EditorPage });
+export const Route = createFileRoute("/")({
+  component: EditorPage,
+});
 
 function EditorPage() {
   const {
@@ -14,8 +21,26 @@ function EditorPage() {
     setMode,
     locked,
     streaming,
-    processDocument,
+    streamId,
+    initiateProcessing,
+    finishProcessing,
   } = useEditorSession();
+
+  const stream = useStream(
+    api.document.streamBody,
+    new URL(HTTP_ROUTES.streamDocument(import.meta.env.VITE_CONVEX_SITE_URL)),
+    true,
+    streamId,
+  );
+
+  const onStreamDone = useEffectEvent((text: string) => finishProcessing(text));
+  useEffect(() => {
+    if (stream.status === "done") onStreamDone(stream.text);
+  }, [stream.status, stream.text]);
+
+  const { editor, preview, onEditorScroll, onPreviewScroll } = useScrollSync();
+
+  const previewContent = stream.status === "streaming" ? stream.text : content;
 
   return (
     // h-[calc(100dvh-48px)]: fill viewport below the 48px sticky header
@@ -27,12 +52,21 @@ function EditorPage() {
           <EditorPane
             content={content}
             onChange={setContent}
-            onSave={processDocument}
+            initiateProcessing={initiateProcessing}
             locked={locked}
+            onScroll={onEditorScroll}
+            onViewCreated={(scrollDOM) => {
+              editor.current = scrollDOM;
+            }}
           />
         </div>
         <div className="flex-1 overflow-hidden">
-          <PreviewPane content={content} streaming={streaming} />
+          <PreviewPane
+            content={previewContent}
+            streaming={streaming}
+            ref={preview as RefObject<HTMLDivElement>}
+            onScroll={onPreviewScroll}
+          />
         </div>
       </div>
     </div>

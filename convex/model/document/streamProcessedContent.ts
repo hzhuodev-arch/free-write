@@ -1,6 +1,13 @@
 import { AnthropicClient } from "@effect/ai-anthropic";
 import * as OpenRouterClient from "@effect/ai-openrouter/OpenRouterClient";
-import { Effect, ExecutionPlan, Layer, pipe, Redacted, Schedule } from "effect";
+import {
+  ExecutionPlan,
+  Layer,
+  pipe,
+  Redacted,
+  Schedule,
+  Stream,
+} from "effect";
 import { type AiError, LanguageModel, Prompt } from "effect/unstable/ai";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 import { MODELS } from "../../llm/models";
@@ -27,7 +34,7 @@ const AiPlan = ExecutionPlan.make(
   },
 );
 
-export const LLMLayer = pipe(
+const LLMLayer = pipe(
   OpenRouterClient.layer({
     apiKey: Redacted.make(process.env.OPEN_ROUTER_API_KEY ?? ""),
   }),
@@ -58,13 +65,12 @@ const constructPrompt = (content: string, mode: Mode) => {
   ]);
 };
 
-export const transformContent = (content: string, mode: Mode) =>
-  Effect.gen(function* () {
-    const prompt = constructPrompt(content, mode);
-
-    const result = yield* LanguageModel.generateText({
-      prompt,
-    }).pipe(Effect.withExecutionPlan(AiPlan), Effect.provide(LLMLayer));
-
-    return result.text;
-  });
+export const streamContent = (content: string, mode: Mode) =>
+  LanguageModel.streamText({
+    prompt: constructPrompt(content, mode),
+  }).pipe(
+    Stream.filter((part) => part.type === "text-delta"),
+    Stream.map((part) => part.delta),
+    Stream.withExecutionPlan(AiPlan),
+    Stream.provide(LLMLayer),
+  );

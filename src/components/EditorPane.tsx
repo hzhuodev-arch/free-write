@@ -4,13 +4,14 @@ import { languages } from "@codemirror/language-data";
 import { keymap } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
-import { useRef } from "react";
 
 interface EditorPaneProps {
   content: string;
   onChange: (value: string) => void;
-  onSave: () => void;
   locked: boolean;
+  initiateProcessing: () => void;
+  onViewCreated: (element: HTMLElement) => void;
+  onScroll: (element: HTMLElement) => void;
 }
 
 const baseExtensions = [
@@ -29,6 +30,17 @@ const baseExtensions = [
       { tag: t.strong, fontWeight: "600" },
       { tag: t.emphasis, fontStyle: "italic" },
       { tag: [t.link, t.url], color: "var(--cm-link)" },
+      // code block token colors
+      { tag: [t.keyword, t.modifier], color: "var(--cm-keyword)" },
+      { tag: [t.string, t.special(t.string)], color: "var(--cm-string)" },
+      { tag: [t.number, t.integer, t.float], color: "var(--cm-number)" },
+      { tag: t.comment, color: "var(--cm-comment)", fontStyle: "italic" },
+      {
+        tag: [t.function(t.variableName), t.function(t.propertyName)],
+        color: "var(--cm-function)",
+      },
+      { tag: [t.typeName, t.className, t.namespace], color: "var(--cm-type)" },
+      { tag: [t.operator, t.derefOperator], color: "var(--cm-operator)" },
     ]),
   ),
 ];
@@ -36,19 +48,23 @@ const baseExtensions = [
 export default function EditorPane({
   content,
   onChange,
-  onSave,
   locked,
+  initiateProcessing,
+  onViewCreated,
+  onScroll,
 }: EditorPaneProps) {
-  const onSaveRef = useRef(onSave);
-  onSaveRef.current = onSave;
-
   const extensions = [
     ...baseExtensions,
+    EditorView.domEventHandlers({
+      scroll(_e, view) {
+        onScroll(view.scrollDOM);
+      },
+    }),
     keymap.of([
       {
         key: "Mod-s",
         run: () => {
-          onSaveRef.current();
+          initiateProcessing();
           return true;
         },
       },
@@ -76,6 +92,7 @@ export default function EditorPane({
           extensions={extensions}
           editable={!locked}
           theme="none"
+          onCreateEditor={(view) => onViewCreated(view.scrollDOM)}
           basicSetup={{
             lineNumbers: false,
             foldGutter: false,

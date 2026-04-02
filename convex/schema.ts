@@ -7,4 +7,10 @@ export default defineSchema({
     version: v.number(),
     userId: v.optional(v.string()),
   }).index("by_userId", ["userId"]),
+
+  streamingJobs: defineTable({
+    streamId: v.string(),
+    content: v.string(),
+    mode: v.union(v.literal("format"), v.literal("restructure")),
+  }).index("by_streamId", ["streamId"]),
 });

@@ -1,6 +1,7 @@
 import { api } from "@convex/_generated/api";
 import type { Mode } from "@convex/shared/types";
-import { useAction } from "convex/react";
+import type { StreamId } from "@convex-dev/persistent-text-streaming";
+import { useMutation } from "convex/react";
 import { useState } from "react";
 
 const CONTENT_KEY = "free-write:content";
@@ -19,7 +20,9 @@ export const useEditorSession = () => {
   });
 
   const [locked, setLocked] = useState(false);
-  const [streaming, _setStreaming] = useState(false);
+
+  const [streamId, setStreamId] = useState<StreamId | undefined>();
+  const [streaming, setStreaming] = useState(false);
 
   const setContent = (value: string) => {
     _setContent(value);
@@ -31,12 +34,20 @@ export const useEditorSession = () => {
     localStorage.setItem(MODE_KEY, value);
   };
 
-  const _processDocument = useAction(api.document.actions.processDocument);
-  const processDocument = async () => {
+  const createDocumentProcessingStream = useMutation(api.document.createStream);
+  
+  const initiateProcessing = async () => {
     setLocked(true);
-    const updatedContent = await _processDocument({ content, mode });
-    setContent(updatedContent);
+    const streamId = await createDocumentProcessingStream({ content, mode });
+    setStreamId(streamId);
+    setStreaming(true);
+  };
+
+  const finishProcessing = (processedContent: string) => {
+    setContent(processedContent);
     setLocked(false);
+    setStreamId(undefined);
+    setStreaming(false);
   };
 
   return {
@@ -46,6 +57,8 @@ export const useEditorSession = () => {
     setMode,
     locked,
     streaming,
-    processDocument,
+    streamId,
+    initiateProcessing,
+    finishProcessing,
   };
 };
