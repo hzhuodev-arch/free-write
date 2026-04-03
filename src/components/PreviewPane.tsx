@@ -1,6 +1,7 @@
 import { forwardRef, type Ref } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
+import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 
 interface PreviewPaneProps {
@@ -37,7 +38,7 @@ const PreviewPane = forwardRef<HTMLElement, PreviewPaneProps>(
         >
           <div className="preview-md">
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={[remarkGfm, remarkBreaks]}
               rehypePlugins={[rehypeHighlight]}
             >
               {content}

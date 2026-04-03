@@ -3,6 +3,7 @@ import { HTTP_ROUTES } from "@convex/shared/httpRoutes";
 import { useStream } from "@convex-dev/persistent-text-streaming/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { type RefObject, useEffect, useEffectEvent } from "react";
+import { useAutoScroll } from "#/hooks/use-auto-scroll";
 import { useEditorSession } from "#/hooks/use-editor-session";
 import { useScrollSync } from "#/hooks/use-scroll-sync";
 import EditorPane from "@/components/EditorPane";
@@ -22,6 +23,7 @@ function EditorPage() {
     locked,
     streaming,
     streamId,
+    driven,
     initiateProcessing,
     finishProcessing,
   } = useEditorSession();
@@ -29,7 +31,7 @@ function EditorPage() {
   const stream = useStream(
     api.document.streamBody,
     new URL(HTTP_ROUTES.streamDocument(import.meta.env.VITE_CONVEX_SITE_URL)),
-    true,
+    driven,
     streamId,
   );
 
@@ -39,6 +41,13 @@ function EditorPage() {
   }, [stream.status, stream.text]);
 
   const { editor, preview, onEditorScroll, onPreviewScroll } = useScrollSync();
+
+  const { onScroll } = useAutoScroll(preview, streaming);
+
+  const handlePreviewScroll = (element: HTMLElement) => {
+    onPreviewScroll(element);
+    onScroll(element);
+  };
 
   const previewContent = stream.status === "streaming" ? stream.text : content;
 
@@ -65,7 +74,7 @@ function EditorPage() {
             content={previewContent}
             streaming={streaming}
             ref={preview as RefObject<HTMLDivElement>}
-            onScroll={onPreviewScroll}
+            onScroll={handlePreviewScroll}
           />
         </div>
       </div>
