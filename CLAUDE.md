@@ -19,4 +19,5 @@ This project uses **pnpm**. Always use `pnpm add <package>` (not `npm install`).
 
 ## Fixing Problems
 
-When addressing a bug or issue, strive to do so in a maintainable way, meaning that if possible, the solution should reduce complexity and makes codebase easier to reason about instead of creating more complexity to patch those bugs  
+- When addressing a bug or issue, strive to do so in a maintainable way, meaning that if possible, the solution should reduce complexity and makes codebase easier to reason about instead of creating more complexity to patch those bugs  
+- Revert the previous changes you made if that turned out to not be the right solution

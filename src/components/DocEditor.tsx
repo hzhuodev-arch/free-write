@@ -4,6 +4,7 @@ import { HTTP_ROUTES } from "@convex/shared/httpRoutes";
 import { useStream } from "@convex-dev/persistent-text-streaming/react";
 import { useEffect, useEffectEvent } from "react";
 import { useEditor } from "@/context/editor";
+import { LayoutProvider } from "@/context/layout";
 import EditorProvider from "./EditorProvider";
 import PromptBar from "./PromptBar";
 import { SessionLockedBanner } from "./SessionLockedBanner";
@@ -34,7 +35,7 @@ function DocEditorLayout() {
   const { sessionAvailable, streamId, closePromptBar } = useEditor();
 
   return (
-    <>
+    <LayoutProvider>
       {!sessionAvailable && <SessionLockedBanner />}
       <Toolbar />
       <PromptBar />
@@ -43,7 +44,7 @@ function DocEditorLayout() {
         key={streamId ?? "idle"}
         onClickEditor={closePromptBar}
       />
-    </>
+    </LayoutProvider>
   );
 }
 

@@ -1,11 +1,28 @@
 import { MODES } from "convex/shared/types";
-import { Loader2, Moon, Sun } from "lucide-react";
+import {
+  Columns2,
+  Loader2,
+  Moon,
+  PanelLeft,
+  PanelRight,
+  Sun,
+} from "lucide-react";
 import { useEditor } from "@/context/editor";
+import { useLayout, type ViewMode } from "@/context/layout";
 import { useTheme } from "@/context/theme";
 import { cn } from "@/lib/utils";
 
+const VIEW_MODES: { mode: ViewMode; icon: typeof PanelLeft; label: string }[] =
+  [
+    { mode: "editor", icon: PanelLeft, label: "Full editor" },
+    { mode: "split", icon: Columns2, label: "Split view" },
+    { mode: "preview", icon: PanelRight, label: "Full preview" },
+  ];
+
 export default function Toolbar() {
-  const { mode, setMode, status, transform, cancel, sessionAvailable } = useEditor();
+  const { mode, setMode, status, transform, cancel, sessionAvailable } =
+    useEditor();
+  const { viewMode, setViewMode } = useLayout();
   const { theme, toggle } = useTheme();
   const disabled = !sessionAvailable;
 
@@ -110,6 +127,30 @@ export default function Toolbar() {
             </span>
           </div>
         )}
+
+        <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
+
+        {/* View mode toggles */}
+        <div className="flex items-center gap-0.5">
+          {VIEW_MODES.map(({ mode: vm, icon: Icon, label }) => (
+            <button
+              key={vm}
+              type="button"
+              title={label}
+              aria-label={label}
+              aria-pressed={viewMode === vm}
+              onClick={() => setViewMode(vm)}
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-md",
+                viewMode === vm
+                  ? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                  : "text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300",
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          ))}
+        </div>
 
         <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
 
