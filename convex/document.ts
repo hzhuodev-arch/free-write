@@ -3,25 +3,24 @@ import {
   StreamIdValidator,
 } from "@convex-dev/persistent-text-streaming";
 import { v } from "convex/values";
-import { Clock, Effect, pipe, Stream } from "effect";
-import { internal } from "./_generated/api";
+import { Clock, Effect } from "effect";
 import {
-  httpAction,
   internalMutation,
   internalQuery,
   mutation,
   query,
 } from "./_generated/server";
 import { streaming } from "./components";
-import { collectDocumentsByUserId } from "./model/document/collectDocumentsByUserId";
-import { createDocument } from "./model/document/createDocument";
-import { createDocumentProcessingStream } from "./model/document/createStream";
-import { deleteDocument } from "./model/document/deleteDocument";
-import { getDocument } from "./model/document/getDocument";
-import { streamContent } from "./model/document/streamProcessedContent";
-import { updateDocument } from "./model/document/updateDocument";
-import { updateDocumentSession } from "./model/document/updateDocumentSession";
-import { validateSession } from "./model/document/validateSession";
+import {
+  collectDocumentsByUserId,
+  createDocument,
+  deleteDocument,
+  getDocument,
+  updateDocument,
+} from "./model/document/crud";
+import { DocumentDbError, StreamError } from "./model/document/errors";
+import { updateDocumentSession, validateSession } from "./model/document/session";
+import { createDocumentProcessingStream } from "./model/document/stream";
 
 // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -50,16 +49,29 @@ export const collectByUserId = query({
 export const streamBody = query({
   args: { streamId: StreamIdValidator },
   handler: async (ctx, args) =>
-    streaming.getStreamBody(ctx, args.streamId as StreamId),
+    Effect.runPromise(
+      Effect.tryPromise({
+        try: () => streaming.getStreamBody(ctx, args.streamId as StreamId),
+        catch: (error) =>
+          new StreamError({ operation: "getStreamBody", error }),
+      }),
+    ),
 });
 
 export const getJob = internalQuery({
   args: { streamId: v.string() },
   handler: async (ctx, args) =>
-    ctx.db
-      .query("streamingJobs")
-      .withIndex("by_streamId", (q) => q.eq("streamId", args.streamId))
-      .first(),
+    Effect.runPromise(
+      Effect.tryPromise({
+        try: () =>
+          ctx.db
+            .query("streamingJobs")
+            .withIndex("by_streamId", (q) => q.eq("streamId", args.streamId))
+            .first(),
+        catch: (error) =>
+          new DocumentDbError({ operation: "getJob", error }),
+      }),
+    ),
 });
 
 // ── Mutations ─────────────────────────────────────────────────────────────
@@ -206,45 +218,4 @@ export const clearActiveStream = mutation({
 export const remove = mutation({
   args: { id: v.id("documents") },
   handler: async (ctx, args) => Effect.runPromise(deleteDocument(ctx, args.id)),
-});
-
-// ── HTTP ───────────────────────────────────────────────────────────────────
-
-export const streamDocument = httpAction(async (ctx, req) => {
-  const { streamId } = (await req.json()) as { streamId: string };
-
-  const job = await ctx.runQuery(internal.document.getJob, { streamId });
-  if (!job) return new Response("Job not found", { status: 404 });
-
-  let fullText = "";
-  const response = await streaming.stream(
-    ctx,
-    req,
-    streamId as StreamId,
-    async (_ctx, _req, _streamId, chunkAppender) => {
-      await pipe(
-        streamContent(job.content, job.mode, job.additionalPrompt),
-        Stream.runForEach((part) =>
-          Effect.promise(async () => {
-            fullText += part;
-            await chunkAppender(part);
-          }),
-        ),
-        Effect.runPromise,
-      );
-
-      // Save final content and clear activeStreamId after all chunks are written.
-      // This must be inside the callback because streaming.stream() returns
-      // immediately without awaiting the callback (it uses `void doStream()`).
-      await ctx.runMutation(internal.document.finishStream, {
-        documentId: job.documentId,
-        content: fullText,
-        streamId,
-      });
-    },
-  );
-
-  response.headers.set("Access-Control-Allow-Origin", "*");
-  response.headers.set("Vary", "Origin");
-  return response;
 });

@@ -1,6 +1,6 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
-import { streamDocument } from "./document";
+import { streamDocument } from "./actions/streamDocument";
 
 const http = httpRouter();
 
