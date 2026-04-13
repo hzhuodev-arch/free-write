@@ -8,10 +8,20 @@
  * @module
  */
 
+import type * as components_ from "../components.js";
 import type * as document from "../document.js";
 import type * as http from "../http.js";
 import type * as llm_models from "../llm/models.js";
+import type * as model_document_collectDocumentsByUserId from "../model/document/collectDocumentsByUserId.js";
+import type * as model_document_createDocument from "../model/document/createDocument.js";
+import type * as model_document_createStream from "../model/document/createStream.js";
+import type * as model_document_deleteDocument from "../model/document/deleteDocument.js";
+import type * as model_document_getDocument from "../model/document/getDocument.js";
 import type * as model_document_streamProcessedContent from "../model/document/streamProcessedContent.js";
+import type * as model_document_updateDocument from "../model/document/updateDocument.js";
+import type * as model_document_updateDocumentSession from "../model/document/updateDocumentSession.js";
+import type * as model_document_validateSession from "../model/document/validateSession.js";
+import type * as shared_const from "../shared/const.js";
 import type * as shared_httpRoutes from "../shared/httpRoutes.js";
 import type * as shared_types from "../shared/types.js";
 
@@ -22,10 +32,20 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  components: typeof components_;
   document: typeof document;
   http: typeof http;
   "llm/models": typeof llm_models;
+  "model/document/collectDocumentsByUserId": typeof model_document_collectDocumentsByUserId;
+  "model/document/createDocument": typeof model_document_createDocument;
+  "model/document/createStream": typeof model_document_createStream;
+  "model/document/deleteDocument": typeof model_document_deleteDocument;
+  "model/document/getDocument": typeof model_document_getDocument;
   "model/document/streamProcessedContent": typeof model_document_streamProcessedContent;
+  "model/document/updateDocument": typeof model_document_updateDocument;
+  "model/document/updateDocumentSession": typeof model_document_updateDocumentSession;
+  "model/document/validateSession": typeof model_document_validateSession;
+  "shared/const": typeof shared_const;
   "shared/httpRoutes": typeof shared_httpRoutes;
   "shared/types": typeof shared_types;
 }>;
