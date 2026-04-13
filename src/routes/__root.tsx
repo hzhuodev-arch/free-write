@@ -2,32 +2,38 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { ConvexProvider, ConvexReactClient } from "convex/react";
-import { useState } from "react";
-import Header from "@/components/Header";
+import { useEffect, useState } from "react";
 import { type Theme, ThemeContext } from "@/context/theme";
 
 import appCss from "@/styles.css?url";
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string, {
+  unsavedChangesWarning: false,
+});
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "TanStack Start Starter" },
+      { title: "Free Write" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
   shellComponent: RootDocument,
+  notFoundComponent: () => (
+    <div className="flex h-dvh items-center justify-center">
+      <p className="text-sm text-zinc-400">Page not found</p>
+    </div>
+  ),
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() =>
-    typeof window !== "undefined" && localStorage.getItem("theme") === "dark"
-      ? "dark"
-      : "light",
-  );
+  const [theme, setTheme] = useState<Theme>("light");
+
+  useEffect(() => {
+    if (localStorage.getItem("theme") === "dark") setTheme("dark");
+  }, []);
 
   function toggle() {
     const next: Theme = theme === "light" ? "dark" : "light";
@@ -51,11 +57,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             }}
           />
         </head>
-        <body className="font-sans antialiased wrap-anywhere selection:bg-[rgba(79,184,178,0.24)]">
-          <ConvexProvider client={convex}>
-            <Header />
-            {children}
-          </ConvexProvider>
+        <body
+          className="font-sans antialiased wrap-anywhere"
+        >
+          <ConvexProvider client={convex}>{children}</ConvexProvider>
           <TanStackDevtools
             config={{ position: "bottom-right" }}
             plugins={[

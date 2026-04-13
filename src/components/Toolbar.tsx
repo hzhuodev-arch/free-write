@@ -1,69 +1,135 @@
-import { MODES, type Mode } from "convex/shared/types";
-import { Loader2 } from "lucide-react";
+import { MODES } from "convex/shared/types";
+import { Loader2, Moon, Sun } from "lucide-react";
+import { useEditor } from "@/context/editor";
+import { useTheme } from "@/context/theme";
+import { cn } from "@/lib/utils";
 
+export default function Toolbar() {
+  const { mode, setMode, status, transform, cancel, sessionAvailable } = useEditor();
+  const { theme, toggle } = useTheme();
+  const disabled = !sessionAvailable;
 
-interface ToolbarProps {
-  mode: Mode;
-  onModeChange: (mode: Mode) => void;
-  loading: boolean;
-}
-
-export default function Toolbar({ mode, onModeChange, loading }: ToolbarProps) {
   return (
-    <div className="flex h-11 shrink-0 items-center gap-3 border-b border-zinc-200 bg-white px-5 dark:border-zinc-800 dark:bg-zinc-950">
+    <div
+      className={cn(
+        "flex h-11 shrink-0 items-center gap-4",
+        "border-b border-zinc-200 bg-white px-4",
+        "dark:border-zinc-800 dark:bg-zinc-950",
+      )}
+    >
       {/* Mode segmented control */}
       <fieldset
         aria-label="Formatting mode"
-        className="m-0 flex items-center gap-0.5 rounded-[7px] border border-zinc-200 bg-zinc-100 p-0.5 dark:border-zinc-800 dark:bg-zinc-900"
+        className={cn(
+          "m-0 flex items-center gap-0.5 rounded-[7px]",
+          "border border-zinc-200 bg-zinc-100 p-0.5",
+          "dark:border-zinc-800 dark:bg-zinc-900",
+        )}
       >
         {MODES.map((m) => (
           <button
             key={m}
             type="button"
             aria-pressed={mode === m}
-            onClick={() => onModeChange(m)}
-            className={[
-              "rounded-[5px] px-3 py-1 text-xs font-medium capitalize leading-tight transition-all",
+            disabled={disabled}
+            onClick={() => setMode(m)}
+            className={cn(
+              "rounded-[5px] px-2.5 py-1 text-[11px]",
+              "font-medium capitalize leading-tight transition-shadow",
               mode === m
                 ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
                 : "text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300",
-            ].join(" ")}
+            )}
           >
             {m.charAt(0).toUpperCase() + m.slice(1)}
           </button>
         ))}
       </fieldset>
 
-      <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
+      {/* Transform / Cancel button */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={status !== "ready" ? cancel : transform}
+        className={cn(
+          "hidden min-w-26 items-center justify-center gap-1.5 rounded-[5px] px-2.5 py-1 sm:flex",
+          "text-[11px] font-medium leading-tight",
+          "border outline-none",
+          status !== "ready"
+            ? [
+                "border-zinc-200 bg-zinc-100 text-zinc-400",
+                "hover:bg-zinc-50 hover:text-zinc-500",
+                "active:bg-zinc-200/60",
+                "dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-500",
+                "dark:hover:bg-zinc-800 dark:hover:text-zinc-400",
+              ]
+            : [
+                "border-zinc-200 bg-white text-zinc-700",
+                "hover:border-zinc-300 hover:text-zinc-900",
+                "active:bg-zinc-50",
+                "dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+                "dark:hover:border-zinc-600 dark:hover:text-zinc-100",
+                "dark:active:bg-zinc-800/80",
+              ],
+        )}
+      >
+        <span>{status !== "ready" ? "Cancel" : "Transform"}</span>
+        <kbd
+          className={cn(
+            "rounded border px-1 py-0.5 font-mono text-[10px] leading-none",
+            status !== "ready"
+              ? "border-zinc-200 bg-zinc-50 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-600"
+              : "border-zinc-300 bg-zinc-50 text-zinc-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-500",
+          )}
+        >
+          {status !== "ready" ? "Esc" : "⌘S"}
+        </kbd>
+      </button>
 
-      <span className="text-[11px] text-zinc-400">
-        Press{" "}
-        <kbd className="rounded border border-zinc-200 bg-zinc-100 px-1 py-0.5 font-mono text-[10px] text-zinc-500 shadow-[0_1px_0_var(--color-zinc-200)] dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:shadow-zinc-700">
-          ⌘S
-        </kbd>{" "}
-        to transform
-      </span>
-
-      {/* Status — right-aligned */}
-      <div className="ml-auto flex items-center gap-2">
-        {loading ? (
-          <>
-            <Loader2
-              data-testid="spinner"
-              className="h-3.5 w-3.5 animate-spin text-blue-500"
-            />
-            <span className="text-[11.5px] font-medium text-blue-600 dark:text-blue-400">
+      {/* Right side: status + theme */}
+      <div className="ml-auto flex items-center gap-3">
+        {status === "initiating" ? (
+          <div className="flex items-center gap-1.5">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-500" />
+            <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+              Initiating…
+            </span>
+          </div>
+        ) : status === "streaming" ? (
+          <div className="flex items-center gap-1.5">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />
+            <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400">
               Formatting…
             </span>
-          </>
+          </div>
         ) : (
-          <div className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 dark:border-emerald-800/60 dark:bg-emerald-950/40">
+          <div className="flex items-center gap-1.5">
             <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span className="text-[11.5px] font-medium text-emerald-700 dark:text-emerald-400">
+            <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
               Ready
             </span>
           </div>
         )}
+
+        <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
+
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-md",
+            "text-zinc-400",
+            "hover:bg-zinc-100 hover:text-zinc-600",
+            "dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300",
+          )}
+        >
+          {theme === "light" ? (
+            <Moon className="h-3.5 w-3.5" />
+          ) : (
+            <Sun className="h-3.5 w-3.5" />
+          )}
+        </button>
       </div>
     </div>
   );

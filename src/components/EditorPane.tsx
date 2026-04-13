@@ -1,15 +1,12 @@
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
-import { keymap } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 import CodeMirror, { EditorView } from "@uiw/react-codemirror";
+import { useEditor } from "@/context/editor";
+import { cn } from "@/lib/utils";
 
 interface EditorPaneProps {
-  content: string;
-  onChange: (value: string) => void;
-  locked: boolean;
-  initiateProcessing: () => void;
   onViewCreated: (element: HTMLElement) => void;
   onScroll: (element: HTMLElement) => void;
 }
@@ -46,13 +43,12 @@ const baseExtensions = [
 ];
 
 export default function EditorPane({
-  content,
-  onChange,
-  locked,
-  initiateProcessing,
   onViewCreated,
   onScroll,
 }: EditorPaneProps) {
+  const { content, setContent, locked } = useEditor();
+  const dimmed = locked;
+
   const extensions = [
     ...baseExtensions,
     EditorView.domEventHandlers({
@@ -60,35 +56,37 @@ export default function EditorPane({
         onScroll(view.scrollDOM);
       },
     }),
-    keymap.of([
-      {
-        key: "Mod-s",
-        run: () => {
-          initiateProcessing();
-          return true;
-        },
-      },
-    ]),
   ];
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="flex h-9 shrink-0 items-center border-b border-zinc-200 bg-zinc-50 px-5 dark:border-zinc-800 dark:bg-[#111113]">
-        <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-zinc-400 dark:text-zinc-600">
+      <div
+        className={cn(
+          "flex h-9 shrink-0 items-center",
+          "border-b border-zinc-200 bg-zinc-50 px-5",
+          "dark:border-zinc-800 dark:bg-[#111113]",
+        )}
+      >
+        <span
+          className={cn(
+            "text-[11px] font-medium uppercase tracking-[0.04em]",
+            "text-zinc-400 dark:text-zinc-600",
+          )}
+        >
           Input
         </span>
       </div>
 
       <section
         aria-label="Text editor"
-        className={[
+        className={cn(
           "flex-1 overflow-auto transition-opacity duration-150",
-          locked ? "pointer-events-none opacity-40" : "",
-        ].join(" ")}
+          dimmed && "opacity-40",
+        )}
       >
         <CodeMirror
           value={content}
-          onChange={onChange}
+          onChange={setContent}
           extensions={extensions}
           editable={!locked}
           theme="none"

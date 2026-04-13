@@ -3,19 +3,33 @@ import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
+import { useEditor } from "@/context/editor";
+import { cn } from "@/lib/utils";
 
 interface PreviewPaneProps {
   content: string;
-  streaming: boolean;
   onScroll: (el: HTMLElement) => void;
 }
 
 const PreviewPane = forwardRef<HTMLElement, PreviewPaneProps>(
-  ({ content, streaming, onScroll }, ref) => {
+  ({ content, onScroll }, ref) => {
+    const { streaming } = useEditor();
+
     return (
       <div className="flex h-full flex-col overflow-hidden">
-        <div className="flex h-9 shrink-0 items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-5 dark:border-zinc-800 dark:bg-[#111113]">
-          <span className="text-[11px] font-medium uppercase tracking-[0.04em] text-zinc-400 dark:text-zinc-600">
+        <div
+          className={cn(
+            "flex h-9 shrink-0 items-center gap-2",
+            "border-b border-zinc-200 bg-zinc-50 px-5",
+            "dark:border-zinc-800 dark:bg-[#111113]",
+          )}
+        >
+          <span
+            className={cn(
+              "text-[11px] font-medium uppercase tracking-[0.04em]",
+              "text-zinc-400 dark:text-zinc-600",
+            )}
+          >
             Preview
           </span>
 
