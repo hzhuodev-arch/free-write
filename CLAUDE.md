@@ -36,14 +36,19 @@ These defaults are optimized for AI coding agents (and humans) working on apps t
 
 React Compiler is enabled. Do not add `useMemo`, `useCallback`, or `memo` unless it's something that cannot be handled by the compiler
 
+Do not use `transition-colors` or `transition-all` on elements that have `dark:` variant classes. This causes theme toggles to animate slowly instead of switching instantly. Use specific transition properties (e.g., `transition-shadow`, `transition-transform`) when animation is needed.
+
+## Package Management
+
+This project uses **pnpm**. Always use `pnpm add <package>` (not `npm install`). Using npm will update `package.json` but not `pnpm-lock.yaml`, causing Vercel builds to fail with `ERR_PNPM_OUTDATED_LOCKFILE`.
+
 ## Fixing Problems
 
 When addressing a bug or issue:
 
 1. Identify the root cause instead of only treating symptoms.
 2. Avoid adding patches, hacks, or conditional fixes on top of unclear behavior.
-3. Prefer simplifying or refactoring the existing logic over layering new complexity.
-4. Ensure the fix improves overall code clarity and maintainability.
-5. If the root cause is unclear, investigate further rather than guessing.
+3. Strive to do so in a maintainable way, meaning that if possible, the solution should reduce complexity and makes codebase easier to reason about instead of creating more complexity to patch those bugs  
+4. If the root cause is unclear, investigate further rather than guessing.
 
 A fix is not complete if it only makes the issue disappear without explaining why it occurred.
