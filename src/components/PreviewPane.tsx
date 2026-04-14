@@ -1,10 +1,26 @@
-import { forwardRef, type Ref } from "react";
-import ReactMarkdown from "react-markdown";
+import { forwardRef, isValidElement, type Ref } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import { useEditor } from "@/context/editor";
 import { cn } from "@/lib/utils";
+import { Mermaid } from "./Mermaid";
+
+const markdownComponents: Components = {
+  pre(props) {
+    const child = props.children;
+    if (isValidElement<{ className?: string; children?: React.ReactNode }>(child)) {
+      const className = child.props.className ?? "";
+      if (className.includes("language-mermaid")) {
+        return (
+          <Mermaid code={String(child.props.children ?? "").replace(/\n$/, "")} />
+        );
+      }
+    }
+    return <pre {...props} />;
+  },
+};
 
 interface PreviewPaneProps {
   content: string;
@@ -54,6 +70,7 @@ const PreviewPane = forwardRef<HTMLElement, PreviewPaneProps>(
             <ReactMarkdown
               remarkPlugins={[remarkGfm, remarkBreaks]}
               rehypePlugins={[rehypeHighlight]}
+              components={markdownComponents}
             >
               {content}
             </ReactMarkdown>
