@@ -1,4 +1,10 @@
-import { createContext, type RefObject, useContext, useRef } from "react";
+import {
+  createContext,
+  type RefObject,
+  useContext,
+  useRef,
+  useState,
+} from "react";
 import { usePersistedState } from "#/hooks/use-persisted-state";
 
 export type ViewMode = "editor" | "split" | "preview";
@@ -27,10 +33,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     "free-write:split-ratio",
     50,
   );
-  const [viewMode, setViewMode] = usePersistedState<ViewMode>(
-    "free-write:view-mode",
-    "split",
-  );
+  const [viewMode, setViewMode] = useState<ViewMode>("split");
   const containerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 

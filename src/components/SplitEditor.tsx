@@ -54,27 +54,26 @@ export default function SplitEditor({
         />
       </div>
 
-      {/* Draggable divider */}
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: drag handle */}
-      <div
-        className={cn(
-          "group relative z-10 shrink-0 cursor-col-resize",
-          viewMode === "split" ? "w-0" : "w-1",
-        )}
-        onMouseDown={onDragStart}
-        onTouchStart={onDragStart}
-      >
-        {/* Visual line */}
+      {/* Draggable divider — only interactive in split mode */}
+      {viewMode === "split" && (
+        // biome-ignore lint/a11y/noStaticElementInteractions: drag handle
         <div
-          className={cn(
-            "absolute inset-y-0 left-1/2 -translate-x-1/2",
-            "w-px bg-zinc-200 group-hover:w-[3px] group-hover:bg-zinc-300",
-            "dark:bg-zinc-800 dark:group-hover:bg-zinc-600",
-          )}
-        />
-        {/* Wider hit area */}
-        <div className="absolute inset-y-0 left-1/2 w-3 -translate-x-1/2" />
-      </div>
+          className="group relative z-10 w-0 shrink-0 cursor-col-resize"
+          onMouseDown={onDragStart}
+          onTouchStart={onDragStart}
+        >
+          {/* Visual line */}
+          <div
+            className={cn(
+              "absolute inset-y-0 left-1/2 -translate-x-1/2",
+              "w-px bg-zinc-200 group-hover:w-[3px] group-hover:bg-zinc-300",
+              "dark:bg-zinc-800 dark:group-hover:bg-zinc-600",
+            )}
+          />
+          {/* Wider hit area */}
+          <div className="absolute inset-y-0 left-1/2 w-3 -translate-x-1/2" />
+        </div>
+      )}
 
       {/* Preview pane */}
       <div
