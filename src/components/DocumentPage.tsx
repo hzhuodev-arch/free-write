@@ -2,11 +2,13 @@ import type { Doc, Id } from "@convex/_generated/dataModel";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useCreateDocumentOptimistic } from "#/hooks/use-create-document-optimistic";
+import { usePersistedState } from "#/hooks/use-persisted-state";
 import { useSessionId } from "#/hooks/use-session-id";
 import { useUserId } from "#/hooks/use-user-id";
 import { cn } from "@/lib/utils";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import DocEditor from "./DocEditor";
-import Sidebar from "./Sidebar";
+import AppSidebar from "./Sidebar";
 
 interface DocumentPageProps {
   documents: Doc<"documents">[];
@@ -15,7 +17,10 @@ interface DocumentPageProps {
 export default function DocumentPage({ documents }: DocumentPageProps) {
   const userId = useUserId();
   const sessionId = useSessionId();
-  const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
+  const [selectedDocId, setSelectedDocId] = usePersistedState<string | null>(
+    "free-write:selected-doc-id",
+    null,
+  );
   // Stable key for DocEditor that survives the optimistic fake→real ID swap
   const [optimisticDocKey, setOptimisticDocKey] = useState<string | null>(null);
 
@@ -45,14 +50,14 @@ export default function DocumentPage({ documents }: DocumentPageProps) {
   };
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-white dark:bg-zinc-950">
-      <Sidebar
+    <SidebarProvider>
+      <AppSidebar
         documents={documents}
         selectedDocId={activeDoc?._id ?? null}
         onCreate={handleCreate}
         onSelect={handleSelect}
       />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <SidebarInset className="h-dvh overflow-hidden bg-white dark:bg-zinc-950">
         {activeDoc ? (
           <DocEditor
             key={optimisticDocKey ?? activeDoc._id}
@@ -63,8 +68,8 @@ export default function DocumentPage({ documents }: DocumentPageProps) {
         ) : (
           <EmptyState onCreate={handleCreate} />
         )}
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 

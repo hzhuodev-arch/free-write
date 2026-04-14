@@ -2,18 +2,22 @@ import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { Link } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
-import {
-  EllipsisVertical,
-  FileText,
-  PanelLeft,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { EllipsisVertical, FileText, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { usePersistedState } from "#/hooks/use-persisted-state";
 import { useUserId } from "#/hooks/use-user-id";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from "@/components/ui/sidebar";
 import { cn, timeAgo } from "@/lib/utils";
 
 function docTitle(doc: Doc<"documents">): string {
@@ -25,25 +29,21 @@ function docTitle(doc: Doc<"documents">): string {
   return "Untitled";
 }
 
-const SIDEBAR_WIDTH = "14rem"; // w-56
-const COLLAPSED_WIDTH = "2.75rem"; // w-11
-
-interface SidebarProps {
+interface AppSidebarProps {
   documents: Doc<"documents">[];
   selectedDocId: string | null;
   onCreate: () => void;
   onSelect: (docId: Id<"documents">) => void;
 }
 
-export default function Sidebar({
+export default function AppSidebar({
   documents,
   selectedDocId,
   onCreate,
   onSelect,
-}: SidebarProps) {
+}: AppSidebarProps) {
   const userId = useUserId();
-  
-  const [open, setOpen] = usePersistedState("free-write:side-bar-open", true);
+
   const [deletionTarget, setDeletionTarget] = useState<Doc<"documents"> | null>(
     null,
   );
@@ -73,10 +73,6 @@ export default function Sidebar({
     },
   );
 
-  function toggle() {
-    setOpen(!open);
-  }
-
   function handleRename(docId: Id<"documents">, title: string) {
     renameDoc({ id: docId, title });
   }
@@ -95,111 +91,79 @@ export default function Sidebar({
   }
 
   return (
-    <div
-      style={{ width: open ? SIDEBAR_WIDTH : COLLAPSED_WIDTH }}
-      className={cn(
-        "flex shrink-0 flex-col border-r transition-[width] duration-200 ease-in-out overflow-hidden",
-        "border-zinc-200 bg-zinc-50/60",
-        "dark:border-zinc-800 dark:bg-zinc-950/60",
-      )}
-    >
+    <Sidebar collapsible="icon" className="border-sidebar-border">
       {/* Header */}
-      <div
-        className={cn(
-          "flex h-11 shrink-0 items-center border-b",
-          open ? "justify-between px-3" : "justify-center",
-          "border-zinc-200 dark:border-zinc-800",
-        )}
-      >
-        {open ? (
-          <>
-            <Link to="/" className="flex items-center gap-2 no-underline">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-zinc-900 dark:bg-zinc-100">
-                <svg
-                  viewBox="0 0 14 14"
-                  className="h-2.5 w-2.5 fill-white dark:fill-zinc-900"
-                  aria-hidden="true"
-                >
-                  <path d="M2 2h4v10H2zM8 2h4v6H8zM8 10h4v2H8z" />
-                </svg>
-              </div>
-              <span
-                className={cn(
-                  "whitespace-nowrap text-[12px] font-semibold tracking-tight",
-                  "text-zinc-900 dark:text-zinc-100",
-                )}
+      <SidebarHeader className="p-0">
+        <div
+          className={cn(
+            "flex h-11 shrink-0 items-center px-3 border-b",
+            "border-sidebar-border",
+          )}
+        >
+          <Link to="/" className="flex items-center gap-2 no-underline">
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-zinc-900 dark:bg-zinc-100">
+              <svg
+                viewBox="0 0 14 14"
+                className="h-2.5 w-2.5 fill-white dark:fill-zinc-900"
+                aria-hidden="true"
               >
-                Free Write
-              </span>
-            </Link>
-
-            <button
-              type="button"
-              onClick={toggle}
-              aria-label="Collapse sidebar"
+                <path d="M2 2h4v10H2zM8 2h4v6H8zM8 10h4v2H8z" />
+              </svg>
+            </div>
+            <span
               className={cn(
-                "flex h-6 w-6 shrink-0 items-center justify-center rounded",
-                "text-zinc-400 hover:bg-zinc-200/60 hover:text-zinc-600",
-                "dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300",
+                "whitespace-nowrap text-[12px] font-semibold tracking-tight",
+                "text-sidebar-foreground",
+                "group-data-[collapsible=icon]:hidden",
               )}
             >
-              <PanelLeft className="h-3.5 w-3.5" />
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label="Open sidebar"
-            className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-md",
-              "text-zinc-400 hover:bg-zinc-200/60 hover:text-zinc-600",
-              "dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300",
-            )}
-          >
-            <PanelLeft className="h-4 w-4" />
-          </button>
-        )}
-      </div>
+              Free Write
+            </span>
+          </Link>
+        </div>
+      </SidebarHeader>
 
-      {/* Expandable content */}
-      <div
-        className={cn(
-          "flex flex-1 flex-col overflow-hidden transition-opacity duration-200 ease-in-out",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-      >
-        {/* New doc button */}
-        <div className="px-2 pt-2">
+      {/* Content */}
+      <SidebarContent>
+        <SidebarGroup className="px-2 pt-2">
+          {/* New document button */}
           <button
             type="button"
             onClick={onCreate}
             className={cn(
               "flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5",
               "text-[12px] font-medium",
-              "text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-700",
-              "dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-200",
+              "text-zinc-500 hover:bg-sidebar-accent hover:text-zinc-700",
+              "dark:text-zinc-400 dark:hover:text-zinc-200",
+              "group-data-[collapsible=icon]:w-8! group-data-[collapsible=icon]:p-2! group-data-[collapsible=icon]:justify-center",
             )}
           >
             <Plus className="h-3.5 w-3.5 shrink-0" />
-            New document
+            <span className="group-data-[collapsible=icon]:hidden">
+              New document
+            </span>
           </button>
-        </div>
 
-        {/* Document list */}
-        <nav className="mt-1 flex-1 overflow-y-auto px-2 pb-3">
-          {documents.map((doc) => (
-            <DocumentItem
-              key={doc._id}
-              doc={doc}
-              isActive={doc._id === selectedDocId}
-              onSelect={() => onSelect(doc._id)}
-              onRename={(title) => handleRename(doc._id, title)}
-              onDelete={() => handleDeleteRequest(doc)}
-            />
-          ))}
-        </nav>
-      </div>
+          {/* Document list */}
+          <SidebarGroupContent className="mt-1">
+            <SidebarMenu>
+              {documents.map((doc) => (
+                <DocumentItem
+                  key={doc._id}
+                  doc={doc}
+                  isActive={doc._id === selectedDocId}
+                  onSelect={() => onSelect(doc._id)}
+                  onRename={(title) => handleRename(doc._id, title)}
+                  onDelete={() => handleDeleteRequest(doc)}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      {/* Rail for hover-to-expand */}
+      <SidebarRail />
 
       {/* Delete confirmation dialog (shared) */}
       {deletionTarget &&
@@ -211,7 +175,7 @@ export default function Sidebar({
           />,
           document.body,
         )}
-    </div>
+    </Sidebar>
   );
 }
 
@@ -253,28 +217,25 @@ function DocumentItem({
     onDelete();
   }
 
-  const iconClass = cn(
-    "mt-0.5 h-3.5 w-3.5 shrink-0",
-    isActive
-      ? "text-zinc-500 dark:text-zinc-400"
-      : "text-zinc-400 dark:text-zinc-600",
-  );
-
-  const activeClass = [
-    "bg-zinc-200/60 text-zinc-900",
-    "dark:bg-zinc-800/60 dark:text-zinc-100",
-  ];
-
   return (
-    <div className="group relative my-0.5">
+    <SidebarMenuItem>
       {renaming ? (
         <div
           className={cn(
             "flex w-full items-start gap-2 rounded-md px-2 py-2",
-            isActive ? activeClass : "text-zinc-600 dark:text-zinc-400",
+            isActive
+              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              : "text-sidebar-foreground",
           )}
         >
-          <FileText className={iconClass} />
+          <FileText
+            className={cn(
+              "mt-0.5 h-3.5 w-3.5 shrink-0",
+              isActive
+                ? "text-zinc-500 dark:text-zinc-400"
+                : "text-zinc-400 dark:text-zinc-600",
+            )}
+          />
           <div className="min-w-0 flex-1">
             <RenameInput
               value={renameValue}
@@ -285,20 +246,28 @@ function DocumentItem({
           </div>
         </div>
       ) : (
-        <button
-          type="button"
+        <SidebarMenuButton
+          isActive={isActive}
           onClick={onSelect}
+          size="sm"
+          tooltip={docTitle(doc)}
           className={cn(
-            "flex w-full items-start gap-2 rounded-md px-2 py-2 text-left",
-            isActive
-              ? activeClass
-              : [
-                  "text-zinc-600 group-hover:bg-zinc-200/40 group-hover:text-zinc-800",
-                  "dark:text-zinc-400 dark:group-hover:bg-zinc-800/40 dark:group-hover:text-zinc-200",
-                ],
+            "items-start py-2 h-auto",
+            !isActive && [
+              "text-zinc-600 dark:text-zinc-400",
+              "hover:text-zinc-800 dark:hover:text-zinc-200",
+              "group-hover/menu-item:bg-sidebar-accent",
+            ],
           )}
         >
-          <FileText className={iconClass} />
+          <FileText
+            className={cn(
+              "mt-0.5 !h-3.5 !w-3.5 shrink-0",
+              isActive
+                ? "text-zinc-500 dark:text-zinc-400"
+                : "text-zinc-400 dark:text-zinc-600",
+            )}
+          />
           <div className="min-w-0 flex-1">
             <div className="truncate whitespace-nowrap text-[12px] font-medium leading-tight">
               {docTitle(doc)}
@@ -312,12 +281,12 @@ function DocumentItem({
               {timeAgo(doc._creationTime)}
             </div>
           </div>
-        </button>
+        </SidebarMenuButton>
       )}
 
       {!renaming && (
-        <button
-          type="button"
+        <SidebarMenuAction
+          showOnHover
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -325,15 +294,14 @@ function DocumentItem({
           }}
           aria-label="Document options"
           className={cn(
-            "absolute right-1.5 top-1/2 -translate-y-1/2",
-            "flex h-5 w-5 items-center justify-center rounded",
-            menuOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100",
-            "text-zinc-400 hover:text-zinc-600",
+            "top-1/2! -translate-y-1/2",
+            "text-zinc-400 hover:text-zinc-600 hover:bg-transparent!",
             "dark:text-zinc-600 dark:hover:text-zinc-300",
+            menuOpen && "!opacity-100",
           )}
         >
-          <EllipsisVertical className="h-3.5 w-3.5" />
-        </button>
+          <EllipsisVertical className="!h-3.5 !w-3.5" />
+        </SidebarMenuAction>
       )}
 
       {menuOpen && (
@@ -343,7 +311,7 @@ function DocumentItem({
           onClose={() => setMenuOpen(false)}
         />
       )}
-    </div>
+    </SidebarMenuItem>
   );
 }
 
