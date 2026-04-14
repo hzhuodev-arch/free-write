@@ -1,13 +1,13 @@
 import type { StreamId } from "@convex-dev/persistent-text-streaming";
 import { Effect, pipe, Stream } from "effect";
-import { internal } from "../_generated/api";
-import { httpAction } from "../_generated/server";
-import { streaming } from "../components";
+import { internal } from "./_generated/api";
+import { httpAction } from "./_generated/server";
+import { streaming } from "./components";
 import {
   StreamError,
   StreamJobNotFoundError,
-} from "../model/document/errors";
-import { streamContent } from "../model/document/stream";
+} from "./model/document/errors";
+import { streamContent } from "./model/document/stream";
 
 export const streamDocument = httpAction(async (ctx, req) =>
   Effect.gen(function* () {
