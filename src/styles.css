@@ -26,11 +26,13 @@ body {
   margin: 0;
   color: #09090b;
   background-color: #ffffff;
+  color-scheme: light;
 }
 
 .dark body {
   color: #fafafa;
   background-color: #09090b;
+  color-scheme: dark;
 }
 
 /* ── Preview pane markdown typography (matches prototype-3 exactly) ── */
