@@ -1,17 +1,16 @@
 import { Clock, Effect } from "effect";
 import type { Id } from "../../_generated/dataModel";
-import type { MutationCtx, QueryCtx } from "../../_generated/server";
 import { SESSION_STALE_TIME_MS } from "../../shared/const";
 import type { Session } from "../../shared/types";
 import { getDocument, updateDocument } from "./crud";
 import { InvalidSessionError } from "./errors";
 
-export const validateSession = (
-  ctx: QueryCtx,
-  args: { docId: Id<"documents">; sessionId: string },
-) =>
+export const validateSession = (args: {
+  docId: Id<"documents">;
+  sessionId: string;
+}) =>
   Effect.gen(function* () {
-    const doc = yield* getDocument(ctx, args.docId);
+    const doc = yield* getDocument(args.docId);
     const now = yield* Clock.currentTimeMillis;
     const valid =
       doc.activeSession === undefined ||
@@ -21,11 +20,11 @@ export const validateSession = (
     return valid;
   });
 
-export const updateDocumentSession = (
-  ctx: MutationCtx,
-  args: { docId: Id<"documents">; session: Session },
-) =>
-  updateDocument(ctx, {
+export const updateDocumentSession = (args: {
+  docId: Id<"documents">;
+  session: Session;
+}) =>
+  updateDocument({
     documentId: args.docId,
     fields: { activeSession: args.session },
   });

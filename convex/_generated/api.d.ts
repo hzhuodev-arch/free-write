@@ -18,6 +18,7 @@ import type * as model_document_crud from "../model/document/crud.js";
 import type * as model_document_errors from "../model/document/errors.js";
 import type * as model_document_session from "../model/document/session.js";
 import type * as model_document_stream from "../model/document/stream.js";
+import type * as service_db from "../service/db.js";
 import type * as shared_const from "../shared/const.js";
 import type * as shared_httpRoutes from "../shared/httpRoutes.js";
 import type * as shared_types from "../shared/types.js";
@@ -40,6 +41,7 @@ declare const fullApi: ApiFromModules<{
   "model/document/errors": typeof model_document_errors;
   "model/document/session": typeof model_document_session;
   "model/document/stream": typeof model_document_stream;
+  "service/db": typeof service_db;
   "shared/const": typeof shared_const;
   "shared/httpRoutes": typeof shared_httpRoutes;
   "shared/types": typeof shared_types;

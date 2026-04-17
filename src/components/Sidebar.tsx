@@ -51,7 +51,7 @@ export default function AppSidebar({
   const renameDoc = useMutation(api.document.updateTitle).withOptimisticUpdate(
     (store, args) => {
       store.setQuery(
-        api.document.collectByUserId,
+        api.document.listByUserId,
         { userId },
         documents.map((doc) =>
           doc._id === args.id ? { ...doc, title: args.title } : doc,
@@ -63,10 +63,10 @@ export default function AppSidebar({
   const deleteDoc = useMutation(api.document.remove).withOptimisticUpdate(
     (store, args) => {
       if (!userId) return;
-      const current = store.getQuery(api.document.collectByUserId, { userId });
+      const current = store.getQuery(api.document.listByUserId, { userId });
       if (current === undefined) return;
       store.setQuery(
-        api.document.collectByUserId,
+        api.document.listByUserId,
         { userId },
         current.filter((doc) => doc._id !== args.id),
       );

@@ -5,6 +5,7 @@ import type { MutationCtx } from "../../_generated/server";
 import { streaming } from "../../components";
 import { constructPrompt } from "../../llm/prompts/documentFormat";
 import { AiPlan, LLMLayer } from "../../llm/providers";
+import { ConvexMutationDb } from "../../service/db";
 import type { Mode } from "../../shared/types";
 import { updateDocument } from "./crud";
 import { DocumentDbError } from "./errors";
@@ -24,6 +25,7 @@ export const createDocumentProcessingStream = (
 ) =>
   Effect.gen(function* () {
     const { documentId, content, mode, additionalPrompt } = args;
+    const db = yield* ConvexMutationDb;
 
     const streamId = yield* Effect.tryPromise({
       try: () => streaming.createStream(ctx),
@@ -33,7 +35,7 @@ export const createDocumentProcessingStream = (
 
     yield* Effect.tryPromise({
       try: () =>
-        ctx.db.insert("streamingJobs", {
+        db.insert("streamingJobs", {
           streamId,
           documentId,
           content,
@@ -44,7 +46,7 @@ export const createDocumentProcessingStream = (
         new DocumentDbError({ operation: "createStreamingJob", error }),
     });
 
-    yield* updateDocument(ctx, {
+    yield* updateDocument({
       documentId,
       fields: { activeStreamId: streamId },
     });

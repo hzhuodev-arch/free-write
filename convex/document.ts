@@ -21,10 +21,11 @@ import {
 import { DocumentDbError, StreamError } from "./model/document/errors";
 import { updateDocumentSession, validateSession } from "./model/document/session";
 import { createDocumentProcessingStream } from "./model/document/stream";
+import { provideMutationDb, provideQueryDb } from "./service/db";
 
 // ── Queries ───────────────────────────────────────────────────────────────
 
-export const collectByUserId = query({
+export const listByUserId = query({
   args: { userId: v.string() },
   returns: v.array(
     v.object({
@@ -43,7 +44,10 @@ export const collectByUserId = query({
     }),
   ),
   handler: async (ctx, args) =>
-    Effect.runPromise(collectDocumentsByUserId(ctx, args.userId)),
+    collectDocumentsByUserId(args.userId).pipe(
+      provideQueryDb(ctx),
+      Effect.runPromise,
+    ),
 });
 
 export const streamBody = query({
@@ -84,14 +88,14 @@ export const claimSession = mutation({
   handler: async (ctx, args) =>
     Effect.gen(function* () {
       const now = yield* Clock.currentTimeMillis;
-      return yield* updateDocumentSession(ctx, {
+      return yield* updateDocumentSession({
         docId: args.documentId,
         session: {
           sessionId: args.sessionId,
           lastUpdatedAt: now,
         },
       });
-    }).pipe(Effect.runPromise),
+    }).pipe(provideMutationDb(ctx), Effect.runPromise),
 });
 
 export const releaseSession = mutation({
@@ -101,20 +105,23 @@ export const releaseSession = mutation({
   },
   handler: async (ctx, args) =>
     Effect.gen(function* () {
-      const doc = yield* getDocument(ctx, args.documentId);
+      const doc = yield* getDocument(args.documentId);
       if (doc.activeSession?.sessionId !== args.sessionId) return;
-      return yield* updateDocumentSession(ctx, {
+      return yield* updateDocumentSession({
         docId: args.documentId,
         session: undefined,
       });
-    }).pipe(Effect.runPromise),
+    }).pipe(provideMutationDb(ctx), Effect.runPromise),
 });
 
 export const create = mutation({
   args: { userId: v.string() },
   returns: v.id("documents"),
   handler: async (ctx, args) =>
-    Effect.runPromise(createDocument(ctx, { userId: args.userId })),
+    createDocument({ userId: args.userId }).pipe(
+      provideMutationDb(ctx),
+      Effect.runPromise,
+    ),
 });
 
 export const updateContent = mutation({
@@ -125,12 +132,12 @@ export const updateContent = mutation({
   },
   handler: async (ctx, args) =>
     Effect.gen(function* () {
-      yield* validateSession(ctx, {
+      yield* validateSession({
         docId: args.docId,
         sessionId: args.sessionId,
       });
       const now = yield* Clock.currentTimeMillis;
-      yield* updateDocument(ctx, {
+      yield* updateDocument({
         documentId: args.docId,
         fields: {
           content: args.content,
@@ -140,18 +147,16 @@ export const updateContent = mutation({
           },
         },
       });
-    }).pipe(Effect.runPromise),
+    }).pipe(provideMutationDb(ctx), Effect.runPromise),
 });
 
 export const updateTitle = mutation({
   args: { id: v.id("documents"), title: v.string() },
   handler: async (ctx, args) =>
-    Effect.runPromise(
-      updateDocument(ctx, {
-        documentId: args.id,
-        fields: { title: args.title },
-      }),
-    ),
+    updateDocument({
+      documentId: args.id,
+      fields: { title: args.title },
+    }).pipe(provideMutationDb(ctx), Effect.runPromise),
 });
 
 export const setActiveStreamId = mutation({
@@ -160,12 +165,10 @@ export const setActiveStreamId = mutation({
     activeStreamId: v.optional(v.string()),
   },
   handler: async (ctx, args) =>
-    Effect.runPromise(
-      updateDocument(ctx, {
-        documentId: args.id,
-        fields: { activeStreamId: args.activeStreamId },
-      }),
-    ),
+    updateDocument({
+      documentId: args.id,
+      fields: { activeStreamId: args.activeStreamId },
+    }).pipe(provideMutationDb(ctx), Effect.runPromise),
 });
 
 export const createStream = mutation({
@@ -179,12 +182,12 @@ export const createStream = mutation({
   returns: StreamIdValidator,
   handler: async (ctx, args) =>
     Effect.gen(function* () {
-      yield* validateSession(ctx, {
+      yield* validateSession({
         docId: args.documentId,
         sessionId: args.sessionId,
       });
       return yield* createDocumentProcessingStream(ctx, args);
-    }).pipe(Effect.runPromise),
+    }).pipe(provideMutationDb(ctx), Effect.runPromise),
 });
 
 export const finishStream = internalMutation({
@@ -195,27 +198,26 @@ export const finishStream = internalMutation({
   },
   handler: async (ctx, args) =>
     Effect.gen(function* () {
-      const doc = yield* getDocument(ctx, args.documentId);
+      const doc = yield* getDocument(args.documentId);
       if (doc.activeStreamId !== args.streamId) return;
-      yield* updateDocument(ctx, {
+      yield* updateDocument({
         documentId: args.documentId,
         fields: { content: args.content, activeStreamId: undefined },
       });
-    }).pipe(Effect.runPromise),
+    }).pipe(provideMutationDb(ctx), Effect.runPromise),
 });
 
 export const clearActiveStream = mutation({
   args: { documentId: v.id("documents") },
   handler: async (ctx, args) =>
-    Effect.runPromise(
-      updateDocument(ctx, {
-        documentId: args.documentId,
-        fields: { activeStreamId: undefined },
-      }),
-    ),
+    updateDocument({
+      documentId: args.documentId,
+      fields: { activeStreamId: undefined },
+    }).pipe(provideMutationDb(ctx), Effect.runPromise),
 });
 
 export const remove = mutation({
   args: { id: v.id("documents") },
-  handler: async (ctx, args) => Effect.runPromise(deleteDocument(ctx, args.id)),
+  handler: async (ctx, args) =>
+    deleteDocument(args.id).pipe(provideMutationDb(ctx), Effect.runPromise),
 });

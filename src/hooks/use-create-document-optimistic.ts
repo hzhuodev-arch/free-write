@@ -13,7 +13,7 @@ export function useCreateDocumentOptimistic(
     (store, args) => {
       const tempId = tempIdRef.current;
       if (!tempId) return;
-      store.setQuery(api.document.collectByUserId, { userId }, [
+      store.setQuery(api.document.listByUserId, { userId }, [
         {
           _id: tempId as Id<"documents">,
           _creationTime: Date.now(),
