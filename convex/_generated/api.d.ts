@@ -9,20 +9,21 @@
  */
 
 import type * as components_ from "../components.js";
-import type * as document from "../document.js";
+import type * as documents from "../documents.js";
 import type * as http from "../http.js";
 import type * as llm_models from "../llm/models.js";
 import type * as llm_prompts_documentFormat from "../llm/prompts/documentFormat.js";
 import type * as llm_providers from "../llm/providers.js";
-import type * as model_document_crud from "../model/document/crud.js";
-import type * as model_document_errors from "../model/document/errors.js";
-import type * as model_document_session from "../model/document/session.js";
-import type * as model_document_stream from "../model/document/stream.js";
+import type * as llm_stream from "../llm/stream.js";
+import type * as model_document from "../model/document.js";
+import type * as model_stream from "../model/stream.js";
 import type * as service_db from "../service/db.js";
 import type * as shared_const from "../shared/const.js";
+import type * as shared_document from "../shared/document.js";
 import type * as shared_httpRoutes from "../shared/httpRoutes.js";
 import type * as shared_types from "../shared/types.js";
-import type * as streamDocument from "../streamDocument.js";
+import type * as shared_util from "../shared/util.js";
+import type * as stream from "../stream.js";
 
 import type {
   ApiFromModules,
@@ -32,20 +33,21 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   components: typeof components_;
-  document: typeof document;
+  documents: typeof documents;
   http: typeof http;
   "llm/models": typeof llm_models;
   "llm/prompts/documentFormat": typeof llm_prompts_documentFormat;
   "llm/providers": typeof llm_providers;
-  "model/document/crud": typeof model_document_crud;
-  "model/document/errors": typeof model_document_errors;
-  "model/document/session": typeof model_document_session;
-  "model/document/stream": typeof model_document_stream;
+  "llm/stream": typeof llm_stream;
+  "model/document": typeof model_document;
+  "model/stream": typeof model_stream;
   "service/db": typeof service_db;
   "shared/const": typeof shared_const;
+  "shared/document": typeof shared_document;
   "shared/httpRoutes": typeof shared_httpRoutes;
   "shared/types": typeof shared_types;
-  streamDocument: typeof streamDocument;
+  "shared/util": typeof shared_util;
+  stream: typeof stream;
 }>;
 
 /**
