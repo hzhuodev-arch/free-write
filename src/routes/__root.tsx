@@ -5,6 +5,7 @@ import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { useEffect, useState } from "react";
 import { type Theme, ThemeContext } from "@/context/theme";
 
+import DocumentsPrefetch from "@/components/DocumentsPrefetch";
 import appCss from "@/styles.css?url";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string, {
@@ -63,7 +64,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <body
           className="font-sans antialiased wrap-anywhere"
         >
-          <ConvexProvider client={convex}>{children}</ConvexProvider>
+          <ConvexProvider client={convex}>
+            <DocumentsPrefetch />
+            {children}
+          </ConvexProvider>
           <TanStackDevtools
             config={{ position: "bottom-right" }}
             plugins={[
