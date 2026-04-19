@@ -257,8 +257,8 @@ function DocumentItem({
             "items-start py-2 h-auto",
             !isActive && [
               "text-zinc-600 dark:text-zinc-400",
-              "hover:text-zinc-800 dark:hover:text-zinc-200",
               "group-hover/menu-item:bg-sidebar-accent",
+              "group-hover/menu-item:text-zinc-800 dark:group-hover/menu-item:text-zinc-200",
             ],
           )}
         >
