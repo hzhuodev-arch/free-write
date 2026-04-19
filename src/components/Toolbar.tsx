@@ -1,15 +1,15 @@
+import { Link } from "@tanstack/react-router";
 import { MODES } from "convex/shared/types";
 import {
   Columns2,
+  HelpCircle,
   Loader2,
-  Moon,
   PanelLeft,
   PanelRight,
-  Sun,
 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useEditor } from "@/context/editor";
 import { useLayout, type ViewMode } from "@/context/layout";
-import { useTheme } from "@/context/theme";
 import { cn } from "@/lib/utils";
 
 const VIEW_MODES: { mode: ViewMode; icon: typeof PanelLeft; label: string }[] =
@@ -23,7 +23,6 @@ export default function Toolbar() {
   const { mode, setMode, status, transform, cancel, sessionAvailable } =
     useEditor();
   const { viewMode, setViewMode } = useLayout();
-  const { theme, toggle } = useTheme();
   const disabled = !sessionAvailable;
 
   return (
@@ -154,23 +153,21 @@ export default function Toolbar() {
 
         <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
 
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+        <Link
+          to="/about"
+          title="What & how"
+          aria-label="What & how"
           className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-md",
+            "flex h-7 w-7 items-center justify-center rounded-md no-underline",
             "text-zinc-400",
             "hover:bg-zinc-100 hover:text-zinc-600",
             "dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300",
           )}
         >
-          {theme === "light" ? (
-            <Moon className="h-3.5 w-3.5" />
-          ) : (
-            <Sun className="h-3.5 w-3.5" />
-          )}
-        </button>
+          <HelpCircle className="h-3.5 w-3.5" />
+        </Link>
+
+        <ThemeToggle />
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ const config = defineConfig({
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
     tailwindcss(),
     tanstackStart(),
-    nitro({ preset: "vercel" }),
+    nitro({ preset: "vercel", prerender: { routes: ["/about"] } }),
     viteReact({ babel: { plugins: ["babel-plugin-react-compiler"] } }),
   ],
   resolve: {
