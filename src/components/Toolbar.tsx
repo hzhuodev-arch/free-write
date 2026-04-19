@@ -73,11 +73,11 @@ export default function Toolbar() {
           "border outline-none",
           status !== "ready"
             ? [
-                "border-zinc-200 bg-zinc-100 text-zinc-400",
-                "hover:bg-zinc-50 hover:text-zinc-500",
-                "active:bg-zinc-200/60",
-                "dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-500",
-                "dark:hover:bg-zinc-800 dark:hover:text-zinc-400",
+                "border-amber-200 bg-amber-50 text-amber-700",
+                "hover:border-amber-300 hover:bg-amber-100 hover:text-amber-800",
+                "active:bg-amber-100/80",
+                "dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300",
+                "dark:hover:border-amber-800 dark:hover:bg-amber-950/70 dark:hover:text-amber-200",
               ]
             : [
                 "border-zinc-200 bg-white text-zinc-700",
@@ -94,7 +94,7 @@ export default function Toolbar() {
           className={cn(
             "rounded border px-1 py-0.5 font-mono text-[10px] leading-none",
             status !== "ready"
-              ? "border-zinc-200 bg-zinc-50 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-600"
+              ? "border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400"
               : "border-zinc-300 bg-zinc-50 text-zinc-400 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-500",
           )}
         >
