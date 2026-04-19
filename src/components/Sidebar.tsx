@@ -1,5 +1,6 @@
 import { api } from "@convex/_generated/api";
-import type { Doc, Id } from "@convex/_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
+import type { Document } from "@convex/shared/document";
 import { Link } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { EllipsisVertical, FileText, Pencil, Plus, Trash2 } from "lucide-react";
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { cn, timeAgo } from "@/lib/utils";
 
-function docTitle(doc: Doc<"documents">): string {
+function docTitle(doc: Document): string {
   if (doc.title.trim()) return doc.title;
   if (doc.content.trim()) {
     const first = doc.content.trim().split("\n")[0].slice(0, 40);
@@ -30,10 +31,10 @@ function docTitle(doc: Doc<"documents">): string {
 }
 
 interface AppSidebarProps {
-  documents: Doc<"documents">[];
+  documents: Document[];
   selectedDocId: string | null;
   onCreate: () => void;
-  onSelect: (docId: Id<"documents">) => void;
+  onSelect: (docId: string) => void;
 }
 
 export default function AppSidebar({
@@ -43,50 +44,51 @@ export default function AppSidebar({
   onSelect,
 }: AppSidebarProps) {
   const userId = useUserId();
-
-  const [deletionTarget, setDeletionTarget] = useState<Doc<"documents"> | null>(
+  const [deletionTarget, setDeletionTarget] = useState<Document | null>(
     null,
   );
 
-  const renameDoc = useMutation(api.document.updateTitle).withOptimisticUpdate(
+  const renameDoc = useMutation(api.documents.updateTitle).withOptimisticUpdate(
     (store, args) => {
+      const current = store.getQuery(api.documents.listByUserId, { userId });
+      if (current === undefined) return;
       store.setQuery(
-        api.document.listByUserId,
+        api.documents.listByUserId,
         { userId },
-        documents.map((doc) =>
-          doc._id === args.id ? { ...doc, title: args.title } : doc,
+        current.map((doc) =>
+          doc.id === args.id ? { ...doc, title: args.title } : doc,
         ),
       );
     },
   );
 
-  const deleteDoc = useMutation(api.document.remove).withOptimisticUpdate(
+  const deleteDoc = useMutation(api.documents.remove).withOptimisticUpdate(
     (store, args) => {
       if (!userId) return;
-      const current = store.getQuery(api.document.listByUserId, { userId });
+      const current = store.getQuery(api.documents.listByUserId, { userId });
       if (current === undefined) return;
       store.setQuery(
-        api.document.listByUserId,
+        api.documents.listByUserId,
         { userId },
-        current.filter((doc) => doc._id !== args.id),
+        current.filter((doc) => doc.id !== args.id),
       );
     },
   );
 
-  function handleRename(docId: Id<"documents">, title: string) {
-    renameDoc({ id: docId, title });
+  function handleRename(docId: string, title: string) {
+    renameDoc({ id: docId as Id<"documents">, title });
   }
 
-  function handleDeleteRequest(target: Doc<"documents">) {
+  function handleDeleteRequest(target: Document) {
     if (target.content.trim() === "") {
-      return deleteDoc({ id: target._id });
+      return deleteDoc({ id: target.id as Id<"documents"> });
     }
     return setDeletionTarget(target);
   }
 
   function confirmDelete() {
     if (!deletionTarget) return;
-    deleteDoc({ id: deletionTarget._id });
+    deleteDoc({ id: deletionTarget.id as Id<"documents"> });
     setDeletionTarget(null);
   }
 
@@ -149,11 +151,11 @@ export default function AppSidebar({
             <SidebarMenu>
               {documents.map((doc) => (
                 <DocumentItem
-                  key={doc._id}
+                  key={doc.id}
                   doc={doc}
-                  isActive={doc._id === selectedDocId}
-                  onSelect={() => onSelect(doc._id)}
-                  onRename={(title) => handleRename(doc._id, title)}
+                  isActive={doc.id === selectedDocId}
+                  onSelect={() => onSelect(doc.id)}
+                  onRename={(title) => handleRename(doc.id, title)}
                   onDelete={() => handleDeleteRequest(doc)}
                 />
               ))}
@@ -188,7 +190,7 @@ function DocumentItem({
   onRename,
   onDelete,
 }: {
-  doc: Doc<"documents">;
+  doc: Document;
   isActive: boolean;
   onSelect: () => void;
   onRename: (title: string) => void;
@@ -278,7 +280,7 @@ function DocumentItem({
                 "text-zinc-400 dark:text-zinc-600",
               )}
             >
-              {timeAgo(doc._creationTime)}
+              {timeAgo(doc.creationTime)}
             </div>
           </div>
         </SidebarMenuButton>

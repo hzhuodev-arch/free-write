@@ -12,7 +12,7 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const userId = useUserId();
-  const documents = useQuery(api.document.collectByUserId, { userId });
+  const documents = useQuery(api.documents.listByUserId, { userId });
 
   if (documents === undefined) {
     return (

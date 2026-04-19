@@ -1,6 +1,7 @@
 import { api } from "@convex/_generated/api";
-import type { Doc } from "@convex/_generated/dataModel";
+import type { Id } from "@convex/_generated/dataModel";
 import { SESSION_STALE_TIME_MS } from "@convex/shared/const";
+import type { Document } from "@convex/shared/document";
 import type { Mode } from "@convex/shared/types";
 import type { StreamId } from "@convex-dev/persistent-text-streaming";
 import { useMutation } from "convex/react";
@@ -18,18 +19,18 @@ export default function EditorProvider({
   ready = true,
   children,
 }: {
-  doc: Doc<"documents">;
+  doc: Document;
   sessionId: string;
   ready?: boolean;
   children: ReactNode;
 }) {
-  const docId = doc._id;
+  const docId = doc.id as Id<"documents">;
 
   // --- Mutations ---
-  const claimSession = useMutation(api.document.claimSession);
-  const createStream = useMutation(api.document.createStream);
-  const clearStream = useMutation(api.document.clearActiveStream);
-  const releaseSession = useMutation(api.document.releaseSession);
+  const claimSession = useMutation(api.documents.claimSession);
+  const createStream = useMutation(api.stream.create);
+  const clearStream = useMutation(api.stream.cancel);
+  const releaseSession = useMutation(api.documents.releaseSession);
 
   // --- Session ---
   const now = useNow();
@@ -63,10 +64,10 @@ export default function EditorProvider({
       : "ready";
 
   const transform = async () => {
-    await flush();
-    await claimSession({ documentId: docId, sessionId });
     setInitiating(true);
     try {
+      await flush();
+      await claimSession({ documentId: docId, sessionId });
       await createStream({
         documentId: docId,
         content: contentLocal,

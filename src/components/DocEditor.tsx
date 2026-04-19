@@ -1,5 +1,5 @@
 import { api } from "@convex/_generated/api";
-import type { Doc } from "@convex/_generated/dataModel";
+import type { Document } from "@convex/shared/document";
 import { HTTP_ROUTES } from "@convex/shared/httpRoutes";
 import { useStream } from "@convex-dev/persistent-text-streaming/react";
 import { useEffect, useEffectEvent } from "react";
@@ -20,7 +20,7 @@ export default function DocEditor({
   sessionId,
   ready = true,
 }: {
-  doc: Doc<"documents">;
+  doc: Document;
   sessionId: string;
   ready?: boolean;
 }) {
@@ -63,7 +63,7 @@ function StreamingSplitEditor({
   } = useEditor();
 
   const stream = useStream(
-    api.document.streamBody,
+    api.stream.body,
     streamUrl,
     streaming,
     streamId,

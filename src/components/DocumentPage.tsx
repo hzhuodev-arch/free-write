@@ -1,4 +1,4 @@
-import type { Doc, Id } from "@convex/_generated/dataModel";
+import type { Document } from "@convex/shared/document";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useCreateDocumentOptimistic } from "#/hooks/use-create-document-optimistic";
@@ -11,7 +11,7 @@ import DocEditor from "./DocEditor";
 import AppSidebar from "./Sidebar";
 
 interface DocumentPageProps {
-  documents: Doc<"documents">[];
+  documents: Document[];
 }
 
 export default function DocumentPage({ documents }: DocumentPageProps) {
@@ -24,12 +24,12 @@ export default function DocumentPage({ documents }: DocumentPageProps) {
   // Stable key for DocEditor that survives the optimistic fake→real ID swap
   const [optimisticDocKey, setOptimisticDocKey] = useState<string | null>(null);
 
-  const createDocument = useCreateDocumentOptimistic(documents, userId);
+  const createDocument = useCreateDocumentOptimistic(userId);
 
   const activeDoc =
-    documents.find((d) => d._id === selectedDocId) ?? documents[0] ?? undefined;
+    documents.find((d) => d.id === selectedDocId) ?? documents[0] ?? undefined;
   const isOptimisticDoc =
-    optimisticDocKey != null && activeDoc?._id === optimisticDocKey;
+    optimisticDocKey != null && activeDoc?.id === optimisticDocKey;
 
   const handleCreate = async () => {
     const result = createDocument();
@@ -44,7 +44,7 @@ export default function DocumentPage({ documents }: DocumentPageProps) {
     }
   };
 
-  const handleSelect = (docId: Id<"documents">) => {
+  const handleSelect = (docId: string) => {
     setSelectedDocId(docId);
     setOptimisticDocKey(null);
   };
@@ -53,14 +53,14 @@ export default function DocumentPage({ documents }: DocumentPageProps) {
     <SidebarProvider>
       <AppSidebar
         documents={documents}
-        selectedDocId={activeDoc?._id ?? null}
+        selectedDocId={activeDoc?.id ?? null}
         onCreate={handleCreate}
         onSelect={handleSelect}
       />
       <SidebarInset className="h-dvh overflow-hidden bg-white dark:bg-zinc-950">
         {activeDoc ? (
           <DocEditor
-            key={optimisticDocKey ?? activeDoc._id}
+            key={optimisticDocKey ?? activeDoc.id}
             doc={activeDoc}
             sessionId={sessionId}
             ready={!isOptimisticDoc}
