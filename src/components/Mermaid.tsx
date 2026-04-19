@@ -19,6 +19,7 @@ async function renderWithTheme(code: string, theme: "neo" | "neo-dark"): Promise
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: "strict",
+    suppressErrorRendering: true,
     theme,
     fontFamily: '"Geist", -apple-system, sans-serif',
   });
