@@ -2,7 +2,7 @@ import { api } from "@convex/_generated/api";
 import type { Document } from "@convex/shared/document";
 import { HTTP_ROUTES } from "@convex/shared/httpRoutes";
 import { useStream } from "@convex-dev/persistent-text-streaming/react";
-import { useEffect, useEffectEvent } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useEditor } from "@/context/editor";
 import { LayoutProvider } from "@/context/layout";
 import EditorProvider from "./EditorProvider";
@@ -32,42 +32,47 @@ export default function DocEditor({
 }
 
 function DocEditorLayout() {
-  const { sessionAvailable, streamId, closePromptBar } = useEditor();
+  const { sessionAvailable, streaming, streamId, content, closePromptBar } =
+    useEditor();
+  const [streamText, setStreamText] = useState("");
+
+  const previewContent = streaming ? streamText : content;
 
   return (
     <LayoutProvider>
       {!sessionAvailable && <SessionLockedBanner />}
       <Toolbar />
       <PromptBar />
-      {/* Key on streamId so useStream fully resets between streams */}
-      <StreamingSplitEditor
+      {/* Key on streamId so useStream fully resets between streams.
+          Kept here (not around SplitEditor) so EditorPane's CodeMirror
+          instance — and its undo history — survives stream lifecycle. */}
+      <StreamWatcher
         key={streamId ?? "idle"}
+        onText={setStreamText}
+      />
+      <SplitEditor
         onClickEditor={closePromptBar}
+        previewContent={previewContent}
+        streaming={streaming}
       />
     </LayoutProvider>
   );
 }
 
-function StreamingSplitEditor({
-  onClickEditor,
-}: {
-  onClickEditor: () => void;
-}) {
+function StreamWatcher({ onText }: { onText: (text: string) => void }) {
   const {
     streaming,
     streamId,
-    content,
     setAdditionalPrompt,
     closePromptBar,
     setFromServer,
   } = useEditor();
 
-  const stream = useStream(
-    api.stream.body,
-    streamUrl,
-    streaming,
-    streamId,
-  );
+  const stream = useStream(api.stream.body, streamUrl, streaming, streamId);
+
+  useEffect(() => {
+    onText(stream.text);
+  }, [stream.text, onText]);
 
   const handleDone = useEffectEvent(() => {
     setAdditionalPrompt("");
@@ -78,13 +83,5 @@ function StreamingSplitEditor({
     if (streaming && stream.status === "done") handleDone();
   }, [streaming, stream.status]);
 
-  const previewContent = streaming ? stream.text : content;
-
-  return (
-    <SplitEditor
-      onClickEditor={onClickEditor}
-      previewContent={previewContent}
-      streaming={streaming}
-    />
-  );
+  return null;
 }
