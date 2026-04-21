@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { getRouteApi, Link } from "@tanstack/react-router";
 import { MODES } from "convex/shared/types";
 import {
   Columns2,
@@ -7,10 +7,12 @@ import {
   PanelLeft,
   PanelRight,
 } from "lucide-react";
-import { useEditor } from "@/editor/editor-context";
-import { useLayout, type ViewMode } from "@/editor/layout-context";
+import { useEditor } from "@/editor/context/editor-context";
+import type { ViewMode } from "@/editor/types";
 import { cn } from "@/lib/utils";
-import ThemeToggle from "@/shell/ThemeToggle";
+import ThemeToggle from "@/shell/components/ThemeToggle";
+
+const indexRoute = getRouteApi("/");
 
 const VIEW_MODES: { mode: ViewMode; icon: typeof PanelLeft; label: string }[] =
   [
@@ -22,7 +24,10 @@ const VIEW_MODES: { mode: ViewMode; icon: typeof PanelLeft; label: string }[] =
 export default function Toolbar() {
   const { mode, setMode, status, transform, cancel, sessionAvailable } =
     useEditor();
-  const { viewMode, setViewMode } = useLayout();
+  const { view } = indexRoute.useSearch();
+  const navigate = indexRoute.useNavigate();
+  const setView = (v: ViewMode) =>
+    navigate({ search: (s) => ({ ...s, view: v}), replace: true });
   const disabled = !sessionAvailable;
 
   return (
@@ -137,11 +142,11 @@ export default function Toolbar() {
               type="button"
               title={label}
               aria-label={label}
-              aria-pressed={viewMode === vm}
-              onClick={() => setViewMode(vm)}
+              aria-pressed={view === vm}
+              onClick={() => setView(vm)}
               className={cn(
                 "flex h-7 w-7 items-center justify-center rounded-md",
-                viewMode === vm
+                view === vm
                   ? "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                   : "text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300",
               )}

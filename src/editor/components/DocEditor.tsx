@@ -3,8 +3,7 @@ import type { Document } from "@convex/shared/document";
 import { HTTP_ROUTES } from "@convex/shared/httpRoutes";
 import { useStream } from "@convex-dev/persistent-text-streaming/react";
 import { useEffect, useEffectEvent, useState } from "react";
-import { useEditor } from "@/editor/editor-context";
-import { LayoutProvider } from "@/editor/layout-context";
+import { useEditor } from "@/editor/context/editor-context";
 import EditorProvider from "./EditorProvider";
 import PromptBar from "./PromptBar";
 import { SessionLockedBanner } from "./SessionLockedBanner";
@@ -39,7 +38,7 @@ function DocEditorLayout() {
   const previewContent = streaming ? streamText : content;
 
   return (
-    <LayoutProvider>
+    <>
       {!sessionAvailable && <SessionLockedBanner />}
       <Toolbar />
       <PromptBar />
@@ -52,7 +51,7 @@ function DocEditorLayout() {
         previewContent={previewContent}
         streaming={streaming}
       />
-    </LayoutProvider>
+    </>
   );
 }
 
