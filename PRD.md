@@ -1,143 +1,158 @@
 # PRD: Free Write — LLM-Powered Markdown Editor
 
+> This document reflects the current built state of the app. It replaces the original MVP spec, which described a single-pane, localStorage-only tool; the project has since grown into a multi-document editor with a Convex-backed sync engine.
+
 ## Problem Statement
 
-Writing in Markdown is friction-heavy for users who don't have its syntax memorized. The current workaround — writing free-form text, copying it into an LLM chat, asking it to reformat, then copying the result back — is tedious and breaks writing flow. There is no tool that combines a distraction-free text editor with automatic, on-demand LLM-powered markdown formatting in a single seamless experience.
+Writing in Markdown is friction-heavy for users who don't have its syntax memorized. The common workaround — drafting prose, pasting into an LLM chat, asking for a formatted rewrite, copying it back — is tedious and breaks writing flow. Free Write collapses that loop into a single editor: you write however you want (prose, dashes, indentation, shorthand) and hit ⌘S to have an LLM rewrite it into clean Markdown in place.
 
 ## Solution
 
-A local web app with a split-pane editor. The left pane accepts free-form text input — prose, rough notes, informal signals like dashes and indentation. On Ctrl+S, the content is sent to an LLM which converts it into well-structured, valid Markdown. The result streams into the right pane (rendered preview) in real time, then replaces the left pane content when complete. The user can toggle between "format only" and "restructure" modes via a toolbar. Content persists in localStorage so refreshing the page never loses work.
+A web app with a document-oriented editor. Each document has content stored on the Convex backend. The editor supports three view modes (editor-only, split, preview-only) selectable via URL search params. On ⌘S the current content is sent to an LLM which streams a reformatted version back; the stream is rendered live in the preview pane, and on completion the editor content is replaced with the LLM output. Streams are persistent — they continue server-side even if the client disconnects — and can be cancelled with Escape. Documents are listed in a sidebar; creation is optimistic. Multi-tab coordination is handled via a session-claim mechanism so two tabs editing the same doc don't clobber each other.
 
 ## User Stories
 
 1. As a writer, I want to type free-form prose without worrying about Markdown syntax, so that I can focus on content rather than formatting.
-2. As a writer, I want to use informal signals like dashes, indentation, and blank lines, so that the LLM can infer my intended structure.
-3. As a writer, I want to press Ctrl+S (or Command+S on MacOS) to trigger LLM formatting, so that the action feels native to my existing save habit.
-4. As a writer, I want the left pane to lock while the LLM is processing, so that I don't accidentally type over content that is about to be replaced.
-5. As a writer, I want the LLM response to stream into the right pane in real time, so that the wait feels short and I can see formatting progress.
-6. As a writer, I want the formatted markdown to replace my raw input in the left pane when complete, so that subsequent edits build on clean markdown.
-7. As a writer, I want to see a rendered preview of my markdown in the right pane at all times, so that I can verify the output looks correct.
-8. As a writer, I want a toolbar toggle to switch between "format only" and "restructure" modes, so that I can choose whether the LLM preserves my content order or reorganizes it.
-9. As a writer, I want "format only" mode to preserve my exact wording and order, so that the LLM acts as a formatter, not an editor.
-10. As a writer, I want "restructure" mode to allow the LLM to reorder and reorganize content for clarity, so that I can use it for polishing drafts.
-11. As a writer, I want my content to be automatically saved to localStorage, so that a browser refresh never loses my work.
-12. As a writer, I want my toolbar mode preference to be saved to localStorage, so that I don't have to reconfigure it each session.
-13. As a writer, I want a toast notification if the LLM call fails, so that I know something went wrong without losing my content.
-14. As a writer, I want my original text to be restored if the LLM call fails, so that a network error or API failure never destroys my work.
-15. As a writer, I want failed LLM calls to be retried automatically with backoff, so that transient errors resolve without manual intervention.
-16. As a writer, I want a visual indicator in the toolbar while the LLM is processing, so that I know the system is working.
-17. As a writer, I want the editor to handle notes, technical documentation, and task lists equally well, so that I can use one tool for all my writing.
+2. As a writer, I want to use informal signals (dashes, arrows, indentation, blank lines), so that the LLM can infer my intended structure.
+3. As a writer, I want to press ⌘S (Ctrl+S) to trigger the LLM rewrite, so that the action feels native to my existing save habit.
+4. As a writer, I want the editor to lock while the LLM is streaming, so that I don't accidentally type over content that is about to be replaced.
+5. As a writer, I want the LLM response to stream into the preview pane in real time, so that the wait feels short and I can watch progress.
+6. As a writer, I want the formatted markdown to replace my raw input when the stream completes, so that subsequent edits build on clean markdown.
+7. As a writer, I want a live rendered preview at all times, so that I can verify the output looks correct.
+8. As a writer, I want to toggle between "format" and "restructure" modes, so that I can choose whether the LLM preserves my order or reorganizes for clarity.
+9. As a writer, I want to optionally attach an extra one-off instruction via a prompt bar, so that I can steer a single transform without changing my default mode.
+10. As a writer, I want ESC to cancel an in-flight stream, so that I can abort a bad rewrite without losing my input.
+11. As a writer, I want my work stored on the backend, so that refreshing or switching devices never loses content.
+12. As a writer, I want multiple documents with a sidebar, so that I can keep different drafts organized.
+13. As a writer, I want document creation to feel instant, so that I can start typing before the backend confirms.
+14. As a writer, I want to switch between editor-only, split, and preview-only views, so that I can focus on writing or reading as the task demands.
+15. As a writer, I want a stream started in one tab to keep running if I close that tab, so that I never lose an LLM response to an accidental navigation.
+16. As a writer, I want a second tab to show "this doc is being edited elsewhere" rather than silently race with the first tab, so that I don't corrupt my own content.
+17. As a writer, I want to take over an abandoned session from another tab, so that I'm never locked out of my own document.
 18. As a writer, I want code blocks and inline code to be correctly inferred and formatted, so that technical documentation renders properly.
-19. As a future user, I want the app to support multiple user accounts, so that I can use it on a team or share it with others.
-20. As a future user, I want my documents to persist in a database rather than only localStorage, so that I can access them across devices.
-21. As a future user, I want a download button to save my markdown to a local file, so that I can use my content outside the app.
+19. As a writer, I want to render mermaid diagrams in the preview, so that I can include visuals without leaving the editor.
+20. As a writer, I want a light/dark theme toggle, so that the editor matches my environment.
+21. As a future user, I want authentication and per-user documents, so that I can use this across devices without a shared anonymous pool.
+22. As a future user, I want to export or download a document as a `.md` file, so that I can use my content outside the app.
 
-## Implementation Decisions
+## Implementation
 
-### Modules
+### Stack
 
-**`EditorPane`**
+- **Frontend:** TanStack Start (Router + SSR shell), React 19 with the React Compiler
+- **Editor:** CodeMirror 6 via `@uiw/react-codemirror` with markdown syntax highlighting
+- **Preview:** `react-markdown` + `remark-gfm` + `remark-breaks` + `rehype-highlight`, plus a custom `Mermaid` renderer for fenced `mermaid` blocks
+- **Styling:** Tailwind v4, shadcn/ui primitives (sidebar, sheet, tooltip, …), `lucide-react` icons
+- **Backend:** Convex (reactive queries + mutations + HTTP actions) with `@convex-dev/persistent-text-streaming` for server-persisted LLM streams
+- **LLM layer:** Effect v4 (`effect` ^4.0.0-beta) with `@effect/ai-anthropic` and `@effect/ai-openrouter`, composed via `ExecutionPlan` for multi-model retry/fallback
+- **Deployment:** Vercel (frontend) + Convex (backend)
 
-- CodeMirror 6 via `@uiw/react-codemirror` with markdown syntax highlighting
-- Accepts `content`, `locked`, and `onSave` props
-- Emits Ctrl+S via `onSave` callback
-- When `locked=true`, editor is read-only and visually dimmed
-- Does not own content state — fully controlled component
-
-**`PreviewPane`**
-
-- `react-markdown` + `remark-gfm` + `rehype-highlight`
-- Accepts a `content` string prop
-- Stateless — re-renders on every chunk during streaming
-- Shows a subtle loading indicator when streaming is active
-
-**`useEditorSession` (hook)**
-
-- Owns all editor state: `content`, `locked`, `mode`, `streaming`
-- On save trigger:
-  1. Snapshot current content
-  2. Lock editor
-  3. Call Convex streaming action with `{ content, mode }`
-  4. Update `previewContent` on each streamed chunk
-  5. On completion: set `content` to full LLM output, unlock
-  6. On failure: restore snapshot, unlock, emit error for toast
-- Syncs `content` and `mode` to localStorage on every change
-- Hydrates from localStorage on mount
-
-**`transformText` (Convex HTTP action)**
-
-- Accepts `{ content: string, mode: 'format' | 'restructure' }`
-- Calls LLM API via injected `llmClient` Effect v4 service
-- Streams response chunks back as a streaming HTTP response
-- Returns error envelope on failure (after retries exhausted)
-- LLM prompt:
-  - System: "You are a markdown formatter. Output ONLY valid markdown, no commentary."
-  - Format mode: "Preserve exact wording and order. Infer structure from informal signals."
-  - Restructure mode: adds "You may reorder and reorganize content for clarity."
-
-**`llmClient` (Effect v4 service)**
-
-- Wraps the LLM SDK (Claude by default, configurable via environment variable)
-- Implements exponential backoff retry (3 attempts)
-- Normalizes API errors into typed Effect failures
-- Injected as a dependency into `transformText` — swap providers without touching action logic
-
-**`Toolbar`**
-
-- Presentational component: format/restructure toggle switch + streaming spinner
-- Accepts `mode`, `onModeChange`, `loading` props
-
-### Architecture Decisions
-
-- LLM API key stored as a Convex environment variable — never exposed to the client
-- Convex schema includes an optional `userId` field on all document types to support future auth without migration
-- No auth in MVP — all requests are anonymous
-- Streaming is implemented via Convex HTTP actions (not queries/mutations) since they support streaming responses
-- The LLM provider is dependency injected into the program at runtime (with Effect v4's dependency injection model / ExecutionPlan in its AI module)
-- The backend uses **Effect v4** (`effect-smol`) — source is vendored at `vendor/effect-smol` as a git subtree for LLM context only, not imported directly
-- TanStack Start handles routing and SSR shell; most logic is client-side
-- Deployed on Vercel; Convex is its own hosted backend
-
-### localStorage Schema
+### Source layout
 
 ```
-free-write:content  → string (current editor content)
-free-write:mode     → 'format' | 'restructure'
+src/
+  editor/           # editor pane, preview pane, toolbar, prompt bar, provider + hooks
+  shell/            # app chrome: sidebar, header, theme toggle, root document
+  design-system/    # shadcn primitives
+  lib/hooks/        # cross-cutting hooks: use-session-id, use-user-id, use-persisted-state, …
+  routes/           # / (doc entry), /about, /doc (layout), __root
+convex/
+  documents.ts      # CRUD + session claim/release mutations/queries
+  stream.ts         # stream lifecycle: create / cancel / finish, plus streamDocument HTTP action
+  http.ts           # /stream-document route registration + CORS
+  schema.ts         # documents + streamingJobs tables
+  llm/              # providers (AiPlan + LLMLayer), stream composition, prompt construction, models
+  model/            # Effect-based domain logic for documents and streams
+  service/db.ts     # MutationDb / QueryDb service tags for Effect DI
+  shared/           # types shared across backend modules
 ```
 
-## Testing Decisions
+### Data model (`convex/schema.ts`)
 
-**What makes a good test:** Tests should verify observable behavior from the outside — inputs and outputs — not internal implementation details. Do not test that a specific function was called; test that the correct outcome occurred.
+- **`documents`**: `{ userId, content, title, activeStreamId?, activeSession? { sessionId, lastUpdatedAt } }`, indexed by `userId`
+- **`streamingJobs`**: `{ streamId, documentId, content, mode, additionalPrompt? }`, indexed by `streamId`
+- Plus the tables owned by the `persistentTextStreaming` Convex component
 
-**`useEditorSession`**
+### Key flows
 
-- Test: on save, editor locks and content is replaced with LLM output on success
-- Test: on save, original content is restored and editor unlocks on LLM failure
-- Test: content and mode are persisted to localStorage on change
-- Test: content and mode are hydrated from localStorage on mount
-- Test: a second Ctrl+S while locked is a no-op
+**Edit loop (content sync)**
+`useContentSync` (in `src/editor/hooks/use-content-sync.ts`) holds a local buffer, debounces writes to `api.documents.updateContent`, and reconciles with server-side updates. The editor is controlled; mutations are session-gated so only the tab holding the active session can write.
 
-**`llmClient`**
+**Transform (⌘S)**
+`EditorProvider.transform`:
+1. Flush the local content buffer to the server
+2. `api.documents.claimSession({ documentId, sessionId })`
+3. `api.stream.create({ documentId, content, mode, additionalPrompt?, sessionId })` — inserts a `streamingJobs` row, creates a persistent stream, patches `activeStreamId` on the document
+4. The client opens the `/stream-document` HTTP action and passes the returned `streamId`; the server then drives the LLM stream and writes chunks
+5. On stream completion, `stream.finish` (internal mutation) replaces `documents.content` with the full text and clears `activeStreamId`
 
-- Test: retries up to 3 times on transient failure before emitting an error
-- Test: does not retry on non-retryable errors (e.g., 400 invalid request)
-- Test: emits a typed error after retries are exhausted
-- Test: successfully returns streamed content on first-attempt success
+**Cancel (Escape)**
+`api.stream.cancel` clears `activeStreamId`. The document content is not rolled back — whatever was saved pre-transform remains.
 
-## Out of Scope
+**Multi-tab coordination**
+`documents.activeSession` records the claiming `sessionId` plus a heartbeat (`lastUpdatedAt`). A second tab sees `sessionAvailable=false` unless the session is its own or the heartbeat is older than `SESSION_STALE_TIME_MS`. UI shows a `SessionLockedBanner` with a "take over" action that re-claims the session.
 
-- Authentication and user accounts (MVP is single-user, anonymous)
-- Database persistence (localStorage only for MVP)
-- File system open/save (download button deferred)
-- Multiple documents or tabs within a session
-- Undo history beyond the browser's native Ctrl+Z
-- LLM behavior toggles beyond format/restructure (e.g., tone, expansion)
-- Mobile/touch support
-- Collaborative editing
+**Optimistic create**
+`useCreateDocumentOptimistic` returns `{ tempId, resolve }`. The UI uses `tempId` as the `key` on `DocEditor` so the component survives the fake→real ID swap when the mutation resolves.
 
-## Further Notes
+### LLM layer
 
-- The LLM prompt should be iterated on based on real usage — the initial prompt is intentionally minimal
-- When adding auth, Convex's built-in auth integrations (Clerk, Auth0) are the path of least resistance given the existing Convex backend
-- The download button (future) should export the LLM-formatted content from the left pane, not the raw input
-- localStorage is the migration path to DB persistence: on auth launch, sync localStorage content to the user's Convex document on first login
+- **`AiPlan`** (`convex/llm/providers.ts`): `ExecutionPlan` that tries `gemini-3.1-flash-preview` (2 attempts, exponential backoff) then falls back to `minimax-m2.5` (2 attempts, fixed backoff), retrying only on `AiError` marked `isRetryable`.
+- **`LLMLayer`**: merged `OpenRouterClient` + `AnthropicClient` layers, both provided with a `FetchHttpClient` layer. API keys come from Convex env vars (`OPEN_ROUTER_API_KEY`, `ANTHROPIC_API_KEY`).
+- **`streamContent`** (`convex/llm/stream.ts`): `LanguageModel.streamText` → filter to `text-delta` → `withExecutionPlan(AiPlan)` → `provide(LLMLayer)`. Provider swaps happen by editing `AiPlan` / `MODELS`; call sites don't change.
+- **Prompts** (`convex/llm/prompts/documentFormat.ts`):
+  - System: `"You are a markdown formatter. Output ONLY valid markdown, no commentary."`
+  - Format mode: preserves the author's exact wording, tone, and phrasing; fixes typos; infers structure from informal signals.
+  - Restructure mode: may reorder/reorganize for clarity while preserving language and voice.
+  - Optional `additionalPrompt` is appended as extra user instructions.
+
+### Client state
+
+- **Content:** server-owned in Convex; client keeps a local debounced buffer via `useContentSync`.
+- **Session id / user id:** generated client-side, persisted in localStorage via `use-session-id` / `use-user-id`.
+- **UI preferences in localStorage:**
+  - `free-write:mode` → `'format' | 'restructure'`
+  - `free-write:selected-doc-id` → last-selected document id
+  - Theme preference via the theme context
+- **View mode:** URL search param `?view=editor|split|preview` on `/`.
+
+## Testing
+
+Target coverage once the test harness is populated (vitest is configured; no tests exist yet):
+
+**Effect LLM layer**
+- Retries on transient `AiError` with `isRetryable: true`; does not retry on non-retryable errors.
+- Falls back from primary to secondary model when the primary exhausts retries.
+- Emits a typed Effect failure after the full plan is exhausted.
+
+**Stream lifecycle**
+- `stream.create` writes a `streamingJobs` row and patches `activeStreamId`.
+- `stream.finish` only replaces content when `activeStreamId` matches the finishing `streamId` (guards against a cancel+restart race).
+- `stream.cancel` clears `activeStreamId` without touching content.
+
+**Session coordination**
+- Two tabs with different `sessionId`s: only the claiming tab can `updateContent`.
+- A stale `activeSession` (older than `SESSION_STALE_TIME_MS`) can be taken over.
+- Releasing a session owned by a different sessionId is a no-op.
+
+**Editor flow**
+- ⌘S during `streaming` is a no-op.
+- Escape during `streaming` calls `stream.cancel`.
+- Optimistic create: DocEditor's `key` survives the tempId→realId swap.
+
+## Out of scope / deferred
+
+- Authentication. The schema carries `userId` and all queries are scoped by it, but there is no auth provider — `userId` is a client-generated anonymous id in localStorage.
+- Markdown export / download button.
+- Collaborative (multi-cursor) editing. The session mechanism is lockout-based, not merge-based.
+- Mobile/touch support.
+- Undo history beyond the browser's native ⌘Z and CodeMirror's built-in history.
+- LLM tone/length/expansion toggles beyond format/restructure.
+- Toast/error surface for stream failures. The editor currently unlocks when `activeStreamId` clears, but there's no user-visible error channel for a failed LLM call.
+
+## Further notes
+
+- The LLM prompt is intentionally minimal and meant to be iterated based on real usage.
+- When adding auth, Convex's built-in integrations (Clerk, Auth0) are the path of least resistance. Existing documents keyed by the anonymous `userId` can be claimed on first sign-in by patching `userId` on the user's docs.
+- The download button (future) should export the server-persisted document content, not any transient editor buffer.
+- The `vendor/effect-smol` subtree is present for LLM-context reference only; the app imports published `effect` / `@effect/ai-*` packages.
