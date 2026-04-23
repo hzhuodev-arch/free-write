@@ -7,6 +7,7 @@ import {
   PanelLeft,
   PanelRight,
 } from "lucide-react";
+import { SidebarTrigger } from "@/design-system/components/sidebar";
 import { useEditor } from "@/editor/context/editor-context";
 import type { ViewMode } from "@/editor/types";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,14 @@ export default function Toolbar() {
         "dark:border-zinc-800 dark:bg-zinc-950",
       )}
     >
+      <SidebarTrigger
+        className={cn(
+          "-ml-1 md:hidden",
+          "text-zinc-500 hover:text-zinc-700",
+          "dark:text-zinc-400 dark:hover:text-zinc-200",
+        )}
+      />
+
       {/* Mode segmented control */}
       <fieldset
         aria-label="Formatting mode"
