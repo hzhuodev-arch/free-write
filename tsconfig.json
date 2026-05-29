@@ -1,6 +1,14 @@
 {
   "include": ["**/*.ts", "**/*.tsx", "convex/shared/**/*.ts"],
-  "exclude": ["convex/_generated", "convex/api", "convex/llm", "convex/services", "convex/schema.ts"],
+  "exclude": [
+    "convex/_generated",
+    "convex/api",
+    "convex/llm",
+    "convex/services",
+    "convex/schema.ts",
+    "repos",
+    "vendor"
+  ],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

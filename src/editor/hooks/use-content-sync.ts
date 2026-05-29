@@ -1,7 +1,13 @@
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useMutation } from "convex/react";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from "react";
 
 const DEBOUNCE_MS = 500;
 
@@ -26,7 +32,7 @@ export function useContentSync(
 
   // Last content known to be persisted on the server.
   const savedRef = useRef(remoteContent);
-  const isDirty = () => localRef.current !== savedRef.current;
+  const isDirty = useCallback(() => localRef.current !== savedRef.current, []);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelTimer = () => {
@@ -45,7 +51,7 @@ export function useContentSync(
       savedRef.current = remoteContent;
       setLocal(remoteContent);
     }
-  }, [remoteContent]);
+  }, [remoteContent, isDirty]);
 
   // Flush pending writes when `ready` flips true and on unmount.
   const flushNow = useEffectEvent(() => {

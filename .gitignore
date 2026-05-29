@@ -15,6 +15,7 @@ todos.json
 .clau
 vendor
 .cta.json
-.vscode
+.vscode/*
+!.vscode/settings.json
 skills-lock.json
 ui-prototype
