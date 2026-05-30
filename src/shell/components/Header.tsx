@@ -23,6 +23,7 @@ export default function Header() {
         </div>
         <Link
           to="/"
+          search={{ view: "split" }}
           className={cn(
             "text-sm font-semibold tracking-tight text-zinc-900",
             "no-underline dark:text-zinc-100",

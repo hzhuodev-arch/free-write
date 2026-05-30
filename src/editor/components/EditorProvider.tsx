@@ -5,7 +5,7 @@ import type { Document } from "@convex/shared/document";
 import type { Mode } from "@convex/shared/types";
 import type { StreamId } from "@convex-dev/persistent-text-streaming";
 import { useMutation } from "convex/react";
-import { type ReactNode, useEffect, useEffectEvent, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useContentSync } from "#/editor/hooks/use-content-sync";
 import { useKeyboardShortcut } from "#/lib/hooks/use-keyboard-shortcut";
 import { useNow } from "#/lib/hooks/use-now";
@@ -39,10 +39,12 @@ export default function EditorProvider({
     doc.activeSession.sessionId === sessionId ||
     now - doc.activeSession.lastUpdatedAt > SESSION_STALE_TIME_MS;
 
-  const onRelease = useEffectEvent(() =>
-    releaseSession({ sessionId, documentId: docId }),
-  );
-  useEffect(() => () => void onRelease(), []);
+  useEffect(() => {
+    if (!ready) return;
+    return () => {
+      void releaseSession({ sessionId, documentId: docId });
+    };
+  }, [docId, ready, releaseSession, sessionId]);
 
   // --- Content ---
   const { contentLocal, setContent, flush, setFromServer } = useContentSync(
@@ -64,6 +66,7 @@ export default function EditorProvider({
       : "ready";
 
   const transform = async () => {
+    if (!ready) return;
     setInitiating(true);
     try {
       await flush();
@@ -81,10 +84,12 @@ export default function EditorProvider({
   };
 
   const cancel = () => {
+    if (!ready) return;
     clearStream({ documentId: docId });
   };
 
   const takeover = () => {
+    if (!ready) return;
     claimSession({ documentId: docId, sessionId });
   };
 
@@ -103,7 +108,7 @@ export default function EditorProvider({
   });
 
   // --- Derived ---
-  const locked = initiating || streaming || !sessionAvailable;
+  const locked = !ready || initiating || streaming || !sessionAvailable;
 
   return (
     <EditorContext.Provider

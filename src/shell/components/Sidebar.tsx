@@ -100,7 +100,11 @@ export default function AppSidebar({
             "border-sidebar-border",
           )}
         >
-          <Link to="/" className="flex items-center gap-2 no-underline">
+          <Link
+            to="/"
+            search={{ view: "split" }}
+            className="flex items-center gap-2 no-underline"
+          >
             <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-zinc-900 dark:bg-zinc-100">
               <svg
                 viewBox="0 0 14 14"

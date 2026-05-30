@@ -1,4 +1,5 @@
 import { api } from "@convex/_generated/api";
+import type { Id } from "@convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { useRef } from "react";
 
@@ -13,7 +14,7 @@ export function useCreateDocumentOptimistic(userId: string) {
         store.getQuery(api.documents.listByUserId, { userId }) ?? [];
       store.setQuery(api.documents.listByUserId, { userId }, [
         {
-          id: tempId,
+          id: tempId as Id<"documents">,
           creationTime: Date.now(),
           userId: args.userId,
           content: "",
