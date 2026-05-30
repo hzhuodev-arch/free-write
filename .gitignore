@@ -13,7 +13,6 @@ __unconfig*
 todos.json
 .vercel
 .clau
-vendor
 .cta.json
 .vscode/*
 !.vscode/settings.json

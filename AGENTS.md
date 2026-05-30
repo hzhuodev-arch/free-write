@@ -14,6 +14,7 @@ This project vendors external source repositories under `repos/` so coding agent
 - Prefer examples, tests, and implementation patterns from the relevant vendored repo over guesses or isolated web snippets.
 - Do not import from `repos/`; application code should continue importing from normal package dependencies.
 - Do not run dependency installs, formatters, or tests from inside `repos/` as part of normal app work.
-- When writing Effect code or Effect AI provider code, inspect `repos/effect/` and read `repos/effect/AGENTS.md` first.
+- If explicitly reintroducing Effect code, inspect `repos/effect/` and read `repos/effect/AGENTS.md` first.
+- When writing Effect AI code (`@effect/ai`, `@effect/ai-anthropic`, `@effect/ai-openai`, etc.), read `.patterns/ai/` first — it captures the idiomatic patterns (LanguageModel generation, tools/toolkits, provider/client/`Model` wiring, Chat, prompts, error handling) distilled from the vendored `repos/effect/packages/ai/` source. Start at `.patterns/ai/README.md`.
 - When writing TanStack Router, TanStack Start, or router plugin code, inspect `repos/tanstack-router/` and read `repos/tanstack-router/AGENTS.md` first.
 - When working with Convex package internals or client/server APIs, inspect `repos/convex-js/`; when working on this app's Convex code, still read `convex/_generated/ai/guidelines.md` first.
