@@ -1,8 +1,7 @@
 import { v } from "convex/values";
-import { Effect } from "effect";
 import { mutation, query } from "./_generated/server";
-import * as doc from "./model/document";
-import { provideMutationDb, provideQueryDb } from "./service/db";
+import { DocumentService } from "./documents/service";
+import { runBackendEffect } from "./runtime/layers";
 
 // ---------- Queries ----------
 
@@ -25,7 +24,10 @@ export const listByUserId = query({
     }),
   ),
   handler: (ctx, args) =>
-    Effect.runPromise(doc.listForUser(args.userId).pipe(provideQueryDb(ctx))),
+    runBackendEffect(
+      ctx.db,
+      DocumentService.use((_) => _.listByUserId(args.userId)),
+    ),
 });
 
 // ---------- Mutations ----------
@@ -34,22 +36,27 @@ export const create = mutation({
   args: { userId: v.string() },
   returns: v.id("documents"),
   handler: (ctx, args) =>
-    Effect.runPromise(
-      doc.create({ userId: args.userId }).pipe(provideMutationDb(ctx)),
+    runBackendEffect(
+      ctx.db,
+      DocumentService.use((_) => _.create(args.userId)),
     ),
 });
 
 export const remove = mutation({
   args: { id: v.id("documents") },
   handler: (ctx, args) =>
-    Effect.runPromise(doc.remove(args.id).pipe(provideMutationDb(ctx))),
+    runBackendEffect(
+      ctx.db,
+      DocumentService.use((_) => _.remove(args.id)),
+    ),
 });
 
 export const updateTitle = mutation({
   args: { id: v.id("documents"), title: v.string() },
   handler: (ctx, args) =>
-    Effect.runPromise(
-      doc.updateTitle(args.id, args.title).pipe(provideMutationDb(ctx)),
+    runBackendEffect(
+      ctx.db,
+      DocumentService.use((_) => _.updateTitle(args.id, args.title)),
     ),
 });
 
@@ -60,25 +67,42 @@ export const updateContent = mutation({
     sessionId: v.string(),
   },
   handler: (ctx, args) =>
-    Effect.runPromise(doc.updateContent(args).pipe(provideMutationDb(ctx))),
+    runBackendEffect(
+      ctx.db,
+      DocumentService.use((_) =>
+        _.updateContent({
+          docId: args.docId,
+          content: args.content,
+          sessionId: args.sessionId,
+        }),
+      ),
+    ),
 });
 
 export const claimSession = mutation({
   args: { documentId: v.id("documents"), sessionId: v.string() },
   handler: (ctx, args) =>
-    Effect.runPromise(
-      doc
-        .claimSession({ docId: args.documentId, sessionId: args.sessionId })
-        .pipe(provideMutationDb(ctx)),
+    runBackendEffect(
+      ctx.db,
+      DocumentService.use((_) =>
+        _.claimSession({
+          docId: args.documentId,
+          sessionId: args.sessionId,
+        }),
+      ),
     ),
 });
 
 export const releaseSession = mutation({
   args: { documentId: v.id("documents"), sessionId: v.string() },
   handler: (ctx, args) =>
-    Effect.runPromise(
-      doc
-        .releaseSession({ docId: args.documentId, sessionId: args.sessionId })
-        .pipe(provideMutationDb(ctx)),
+    runBackendEffect(
+      ctx.db,
+      DocumentService.use((_) =>
+        _.releaseSession({
+          docId: args.documentId,
+          sessionId: args.sessionId,
+        }),
+      ),
     ),
 });

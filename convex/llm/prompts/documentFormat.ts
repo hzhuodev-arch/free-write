@@ -1,4 +1,3 @@
-import { Prompt } from "effect/unstable/ai";
 import type { Mode } from "../../shared/types";
 
 export const constructPrompt = (
@@ -15,7 +14,7 @@ export const constructPrompt = (
     ? `\n\nAdditional instructions from the user:\n${additionalPrompt.trim()}`
     : "";
 
-  return Prompt.make([
+  return [
     {
       role: "system",
       content:
@@ -27,5 +26,5 @@ export const constructPrompt = (
         { type: "text", text: `${userInstruction}${extra}\n\n${content}` },
       ],
     },
-  ]);
+  ] as const;
 };

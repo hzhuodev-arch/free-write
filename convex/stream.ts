@@ -3,7 +3,7 @@ import {
   StreamIdValidator,
 } from "@convex-dev/persistent-text-streaming";
 import { v } from "convex/values";
-import { Effect, pipe, Schema, Stream } from "effect";
+import { Effect, Stream } from "effect";
 import { internal } from "./_generated/api";
 import {
   httpAction,
@@ -13,11 +13,10 @@ import {
   query,
 } from "./_generated/server";
 import { streaming } from "./components";
-import { streamContent } from "./llm/stream";
-import * as doc from "./model/document";
-import { DocumentDbError } from "./model/document";
-import * as stream from "./model/stream";
-import { provideMutationDb, provideQueryDb } from "./service/db";
+import { DocumentService } from "./documents/service";
+import { LlmService } from "./llm/service";
+import { runBackendEffect, runLlmEffect } from "./runtime/layers";
+import { StreamService } from "./stream/service";
 
 // ---------- Stream content query ----------
 
@@ -38,34 +37,41 @@ export const create = mutation({
     sessionId: v.string(),
   },
   returns: StreamIdValidator,
-  handler: (ctx, args) =>
-    Effect.runPromise(
-      Effect.gen(function* () {
-        yield* doc.validateSession({
+  handler: async (ctx, args) => {
+    await runBackendEffect(
+      ctx.db,
+      DocumentService.use((_) =>
+        _.validateSession({
           docId: args.documentId,
           sessionId: args.sessionId,
-        });
-        const streamId = yield* Effect.tryPromise({
-          try: () => streaming.createStream(ctx),
-          catch: (error) => new DocumentDbError({ operation: "insert", error }),
-        });
-        yield* stream.registerStream({
+        }),
+      ),
+    );
+
+    const streamId = await streaming.createStream(ctx);
+    await runBackendEffect(
+      ctx.db,
+      StreamService.use((_) =>
+        _.register({
           documentId: args.documentId,
           streamId,
           content: args.content,
           mode: args.mode,
           additionalPrompt: args.additionalPrompt,
-        });
-        return streamId;
-      }).pipe(provideMutationDb(ctx)),
-    ),
+        }),
+      ),
+    );
+
+    return streamId;
+  },
 });
 
 export const cancel = mutation({
   args: { documentId: v.id("documents") },
   handler: (ctx, args) =>
-    Effect.runPromise(
-      stream.clearActiveStream(args.documentId).pipe(provideMutationDb(ctx)),
+    runBackendEffect(
+      ctx.db,
+      StreamService.use((_) => _.clearActiveStream(args.documentId)),
     ),
 });
 
@@ -76,79 +82,80 @@ export const finish = internalMutation({
     streamId: v.string(),
   },
   handler: (ctx, args) =>
-    Effect.runPromise(stream.finishStream(args).pipe(provideMutationDb(ctx))),
+    runBackendEffect(
+      ctx.db,
+      StreamService.use((_) =>
+        _.finish({
+          documentId: args.documentId,
+          content: args.content,
+          streamId: args.streamId,
+        }),
+      ),
+    ),
 });
 
 export const getJob = internalQuery({
   args: { streamId: v.string() },
   handler: (ctx, args) =>
-    Effect.runPromise(stream.getJob(args.streamId).pipe(provideQueryDb(ctx))),
+    runBackendEffect(
+      ctx.db,
+      StreamService.use((_) => _.getJob(args.streamId)),
+    ),
 });
 
 // ---------- HTTP handler: drives the stream ----------
 
-class StreamError extends Schema.TaggedErrorClass<StreamError>()(
-  "StreamError",
-  {
-    operation: Schema.String,
-    error: Schema.Unknown.pipe(Schema.optional),
-  },
-) {}
+export const streamDocument = httpAction(async (ctx, req) => {
+  let streamId: string;
+  try {
+    const body = (await req.json()) as { streamId?: string };
+    if (!body.streamId)
+      return new Response("Missing streamId", { status: 400 });
+    streamId = body.streamId;
+  } catch {
+    return new Response("Invalid request body", { status: 400 });
+  }
 
-class StreamJobNotFoundError extends Schema.TaggedErrorClass<StreamJobNotFoundError>()(
-  "StreamJobNotFoundError",
-  {},
-) {}
+  const job = await ctx.runQuery(internal.stream.getJob, { streamId });
+  if (!job) return new Response("Job not found", { status: 404 });
 
-export const streamDocument = httpAction(async (ctx, req) =>
-  Effect.gen(function* () {
-    const { streamId } = yield* Effect.tryPromise({
-      try: () => req.json() as Promise<{ streamId: string }>,
-      catch: (error) => new StreamError({ operation: "parseRequest", error }),
-    });
-
-    const job = yield* Effect.tryPromise({
-      try: () => ctx.runQuery(internal.stream.getJob, { streamId }),
-      catch: (error) => new StreamError({ operation: "getJob", error }),
-    });
-    if (!job) return yield* new StreamJobNotFoundError();
-
-    let fullText = "";
-    const response = yield* Effect.tryPromise({
-      try: () =>
-        streaming.stream(
-          ctx,
-          req,
-          streamId as StreamId,
-          async (_ctx, _req, _streamId, chunkAppender) => {
-            await pipe(
-              streamContent(job.content, job.mode, job.additionalPrompt),
-              Stream.runForEach((part) =>
-                Effect.promise(async () => {
-                  fullText += part;
-                  await chunkAppender(part);
-                }),
+  const response = await streaming.stream(
+    ctx,
+    req,
+    streamId as StreamId,
+    async (_ctx, _req, _streamId, chunkAppender) => {
+      // Drive the LanguageModel stream: forward each text delta to the client as
+      // it arrives, and fold the deltas into the full document text. Failures
+      // surface through runLlmEffect (mapped to a plain Error) and reject here.
+      const fullText = await runLlmEffect(
+        LlmService.use((llm) =>
+          llm
+            .streamContent({
+              content: job.content,
+              mode: job.mode,
+              additionalPrompt: job.additionalPrompt,
+            })
+            .pipe(
+              Stream.tap((delta) =>
+                Effect.promise(() => chunkAppender(delta)),
               ),
-              Effect.runPromise,
-            );
-
-            await ctx.runMutation(internal.stream.finish, {
-              documentId: job.documentId,
-              content: fullText,
-              streamId,
-            });
-          },
+              Stream.runFold(
+                () => "",
+                (acc, delta) => acc + delta,
+              ),
+            ),
         ),
-      catch: (error) => new StreamError({ operation: "stream", error }),
-    });
+      );
 
-    response.headers.set("Access-Control-Allow-Origin", "*");
-    response.headers.set("Vary", "Origin");
-    return response;
-  }).pipe(
-    Effect.catchTag("StreamJobNotFoundError", () =>
-      Effect.succeed(new Response("Job not found", { status: 404 })),
-    ),
-    Effect.runPromise,
-  ),
-);
+      await ctx.runMutation(internal.stream.finish, {
+        documentId: job.documentId,
+        content: fullText,
+        streamId,
+      });
+    },
+  );
+
+  response.headers.set("Access-Control-Allow-Origin", "*");
+  response.headers.set("Vary", "Origin");
+  return response;
+});

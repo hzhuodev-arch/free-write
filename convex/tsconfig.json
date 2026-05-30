@@ -18,10 +18,7 @@
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "isolatedModules": true,
-    "noEmit": true,
-
-    /* Effect language service plugin */
-    "plugins": [{ "name": "@effect/language-service" }]
+    "noEmit": true
   },
   "include": ["./**/*"]
 }

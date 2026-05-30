@@ -1,0 +1,29 @@
+diff --git a/dist/internal/effect.js b/dist/internal/effect.js
+index 5b2d440a2be0767de17ef41e39e850d872a0bee5..6298012e15f1161f54e755d6644efaa502ad4830 100644
+--- a/dist/internal/effect.js
++++ b/dist/internal/effect.js
+@@ -2425,13 +2425,19 @@ class ClockImpl {
+ }
+ const performanceNowNanos = /*#__PURE__*/function () {
+   const bigint1e6 = /*#__PURE__*/BigInt(1_000_000);
+-  if (typeof performance === "undefined" || typeof performance.now === "undefined") {
++  try {
++    if (typeof performance === "undefined" || typeof performance.now === "undefined") {
++      return () => BigInt(Date.now()) * bigint1e6;
++    } else if (typeof performance.timeOrigin === "number" && performance.timeOrigin === 0) {
++      return () => BigInt(Math.round(performance.now() * 1_000_000));
++    }
++    const origin = BigInt(Date.now()) * bigint1e6 - BigInt(Math.round(performance.now() * 1_000_000));
++    return () => origin + BigInt(Math.round(performance.now() * 1_000_000));
++  } catch {
++    // Convex's push-time module analyzer exposes a `performance` global that
++    // throws on access. Fall back to Date.now so import-time evaluation can't fail.
+     return () => BigInt(Date.now()) * bigint1e6;
+-  } else if (typeof performance.timeOrigin === "number" && performance.timeOrigin === 0) {
+-    return () => BigInt(Math.round(performance.now() * 1_000_000));
+   }
+-  const origin = /*#__PURE__*/BigInt(/*#__PURE__*/Date.now()) * bigint1e6 - /*#__PURE__*/BigInt(/*#__PURE__*/Math.round(/*#__PURE__*/performance.now() * 1_000_000));
+-  return () => origin + BigInt(Math.round(performance.now() * 1_000_000));
+ }();
+ const processOrPerformanceNow = /*#__PURE__*/function () {
+   const processHrtime = typeof process === "object" && "hrtime" in process && typeof process.hrtime.bigint === "function" ? process.hrtime : undefined;

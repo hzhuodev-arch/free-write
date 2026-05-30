@@ -2,12 +2,9 @@
   "include": ["**/*.ts", "**/*.tsx", "convex/shared/**/*.ts"],
   "exclude": [
     "convex/_generated",
-    "convex/api",
     "convex/llm",
-    "convex/services",
     "convex/schema.ts",
-    "repos",
-    "vendor"
+    "repos"
   ],
   "compilerOptions": {
     "target": "ES2022",
@@ -34,9 +31,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true,
-
-    /* Effect language service plugin */
-    "plugins": [{ "name": "@effect/language-service" }]
+    "noUncheckedSideEffectImports": true
   }
 }
