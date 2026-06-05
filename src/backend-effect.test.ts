@@ -12,6 +12,7 @@ import {
 } from "../convex/documents/service";
 import { appClockFixed } from "../convex/runtime/clock";
 import type { Document } from "../convex/shared/document";
+import { StreamJobRepository } from "../convex/stream/repository";
 import { StreamService, streamServiceLive } from "../convex/stream/service";
 
 const docId = "doc_1" as Id<"documents">;
@@ -60,13 +61,20 @@ const makeDocumentRepositoryLayer = (documents: Map<string, Document>) =>
       }),
   });
 
-const provideDocuments = (documents: Map<string, Document>) =>
-  Layer.mergeAll(
-    documentServiceLive,
-    streamServiceLive,
+const streamJobRepositoryStub = Layer.succeed(StreamJobRepository)({
+  insert: () => Effect.void,
+  getByStreamId: () => Effect.succeed(null),
+});
+
+const provideDocuments = (documents: Map<string, Document>) => {
+  const repositories = Layer.mergeAll(
     makeDocumentRepositoryLayer(documents),
+    streamJobRepositoryStub,
     appClockFixed(now),
   );
+  const services = Layer.mergeAll(documentServiceLive, streamServiceLive);
+  return services.pipe(Layer.provide(repositories));
+};
 
 describe("Effect backend services", () => {
   it("updates content and refreshes the active session when the session is valid", async () => {

@@ -1,21 +1,24 @@
-import { Data } from "effect";
+import { Schema } from "effect";
 
-export class DocumentNotFoundError extends Data.TaggedError(
+export class DocumentNotFoundError extends Schema.TaggedErrorClass<DocumentNotFoundError>()(
   "DocumentNotFoundError",
-)<{
-  readonly documentId: string;
-}> {}
+  {
+    documentId: Schema.String,
+  },
+) {}
 
-export class DocumentPersistenceError extends Data.TaggedError(
+export class DocumentPersistenceError extends Schema.TaggedErrorClass<DocumentPersistenceError>()(
   "DocumentPersistenceError",
-)<{
-  readonly operation: "get" | "list" | "insert" | "patch" | "delete";
-  readonly cause: unknown;
-}> {}
+  {
+    operation: Schema.Literals(["get", "list", "insert", "patch", "delete"]),
+    cause: Schema.Unknown,
+  },
+) {}
 
-export class InvalidDocumentSessionError extends Data.TaggedError(
+export class InvalidDocumentSessionError extends Schema.TaggedErrorClass<InvalidDocumentSessionError>()(
   "InvalidDocumentSessionError",
-)<{
-  readonly documentId: string;
-  readonly sessionId: string;
-}> {}
+  {
+    documentId: Schema.String,
+    sessionId: Schema.String,
+  },
+) {}

@@ -1,8 +1,9 @@
-import { Data } from "effect";
+import { Schema } from "effect";
 
-export class StreamJobPersistenceError extends Data.TaggedError(
+export class StreamJobPersistenceError extends Schema.TaggedErrorClass<StreamJobPersistenceError>()(
   "StreamJobPersistenceError",
-)<{
-  readonly operation: "get" | "insert";
-  readonly cause: unknown;
-}> {}
+  {
+    operation: Schema.Literals(["get", "insert"]),
+    cause: Schema.Unknown,
+  },
+) {}

@@ -25,103 +25,89 @@ export class DocumentService extends ServiceMap.Service<
   {
     readonly listByUserId: (
       userId: string,
-    ) => Effect.Effect<Document[], DocumentError, DocumentRepository>;
+    ) => Effect.Effect<Document[], DocumentError>;
     readonly create: (
       userId: string,
-    ) => Effect.Effect<Id<"documents">, DocumentError, DocumentRepository>;
+    ) => Effect.Effect<Id<"documents">, DocumentError>;
     readonly remove: (
       id: Id<"documents">,
-    ) => Effect.Effect<void, DocumentError, DocumentRepository>;
+    ) => Effect.Effect<void, DocumentError>;
     readonly updateTitle: (
       id: Id<"documents">,
       title: string,
-    ) => Effect.Effect<void, DocumentError, DocumentRepository>;
+    ) => Effect.Effect<void, DocumentError>;
     readonly updateContent: (args: {
       readonly docId: Id<"documents">;
       readonly content: string;
       readonly sessionId: string;
-    }) => Effect.Effect<void, DocumentError, DocumentRepository | AppClock>;
+    }) => Effect.Effect<void, DocumentError>;
     readonly validateSession: (args: {
       readonly docId: Id<"documents">;
       readonly sessionId: string;
-    }) => Effect.Effect<void, DocumentError, DocumentRepository | AppClock>;
+    }) => Effect.Effect<void, DocumentError>;
     readonly claimSession: (args: {
       readonly docId: Id<"documents">;
       readonly sessionId: string;
-    }) => Effect.Effect<void, DocumentError, DocumentRepository | AppClock>;
+    }) => Effect.Effect<void, DocumentError>;
     readonly releaseSession: (args: {
       readonly docId: Id<"documents">;
       readonly sessionId: string;
-    }) => Effect.Effect<void, DocumentError, DocumentRepository>;
+    }) => Effect.Effect<void, DocumentError>;
   }
 >()("DocumentService") {}
 
-export const documentServiceLive = Layer.succeed(DocumentService)({
-  listByUserId: (userId) =>
-    Effect.gen(function* () {
-      const repository = yield* DocumentRepository;
-      return yield* repository.listForUser(userId);
-    }),
-  create: (userId) =>
-    Effect.gen(function* () {
-      const repository = yield* DocumentRepository;
-      return yield* repository.create({ userId });
-    }),
-  remove: (id) =>
-    Effect.gen(function* () {
-      const repository = yield* DocumentRepository;
-      yield* repository.remove(id);
-    }),
-  updateTitle: (id, title) =>
-    Effect.gen(function* () {
-      const repository = yield* DocumentRepository;
-      yield* repository.patch(id, { title });
-    }),
-  validateSession: ({ docId, sessionId }) =>
-    Effect.gen(function* () {
-      const repository = yield* DocumentRepository;
-      const clock = yield* AppClock;
-      const document = yield* repository.get(docId);
-      const now = yield* clock.currentTimeMillis;
+export const documentServiceLive = Layer.effect(DocumentService)(
+  Effect.gen(function* () {
+    const repository = yield* DocumentRepository;
+    const clock = yield* AppClock;
 
-      if (!canUseSession(document, sessionId, now)) {
-        return yield* Effect.fail(
-          new InvalidDocumentSessionError({ documentId: docId, sessionId }),
-        );
-      }
-    }),
-  updateContent: ({ docId, sessionId, content }) =>
-    Effect.gen(function* () {
-      const repository = yield* DocumentRepository;
-      const clock = yield* AppClock;
-      const document = yield* repository.get(docId);
-      const now = yield* clock.currentTimeMillis;
+    return {
+      listByUserId: (userId) => repository.listForUser(userId),
+      create: (userId) => repository.create({ userId }),
+      remove: (id) => repository.remove(id),
+      updateTitle: (id, title) => repository.patch(id, { title }),
+      validateSession: ({ docId, sessionId }) =>
+        Effect.gen(function* () {
+          const document = yield* repository.get(docId);
+          const now = yield* clock.currentTimeMillis;
 
-      if (!canUseSession(document, sessionId, now)) {
-        return yield* Effect.fail(
-          new InvalidDocumentSessionError({ documentId: docId, sessionId }),
-        );
-      }
+          if (!canUseSession(document, sessionId, now)) {
+            return yield* new InvalidDocumentSessionError({
+              documentId: docId,
+              sessionId,
+            });
+          }
+        }),
+      updateContent: ({ docId, sessionId, content }) =>
+        Effect.gen(function* () {
+          const document = yield* repository.get(docId);
+          const now = yield* clock.currentTimeMillis;
 
-      yield* repository.patch(docId, {
-        content,
-        activeSession: { sessionId, lastUpdatedAt: now },
-      });
-    }),
-  claimSession: ({ docId, sessionId }) =>
-    Effect.gen(function* () {
-      const repository = yield* DocumentRepository;
-      const clock = yield* AppClock;
-      const now = yield* clock.currentTimeMillis;
-      yield* repository.patch(docId, {
-        activeSession: { sessionId, lastUpdatedAt: now },
-      });
-    }),
-  releaseSession: ({ docId, sessionId }) =>
-    Effect.gen(function* () {
-      const repository = yield* DocumentRepository;
-      const document = yield* repository.get(docId);
-      if (document.activeSession?.sessionId !== sessionId) return;
-      yield* repository.patch(docId, { activeSession: undefined });
-    }),
-});
+          if (!canUseSession(document, sessionId, now)) {
+            return yield* new InvalidDocumentSessionError({
+              documentId: docId,
+              sessionId,
+            });
+          }
+
+          yield* repository.patch(docId, {
+            content,
+            activeSession: { sessionId, lastUpdatedAt: now },
+          });
+        }),
+      claimSession: ({ docId, sessionId }) =>
+        Effect.gen(function* () {
+          const now = yield* clock.currentTimeMillis;
+          yield* repository.patch(docId, {
+            activeSession: { sessionId, lastUpdatedAt: now },
+          });
+        }),
+      releaseSession: ({ docId, sessionId }) =>
+        Effect.gen(function* () {
+          const document = yield* repository.get(docId);
+          if (document.activeSession?.sessionId !== sessionId) return;
+          yield* repository.patch(docId, { activeSession: undefined });
+        }),
+    };
+  }),
+);
