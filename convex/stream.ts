@@ -14,6 +14,7 @@ import {
 } from "./_generated/server";
 import { streaming } from "./components";
 import { DocumentService } from "./documents/service";
+import { streamModelPlan } from "./llm/provider";
 import { LlmService } from "./llm/service";
 import { runBackendEffect, runLlmEffect } from "./runtime/layers";
 import { StreamService } from "./stream/service";
@@ -136,9 +137,14 @@ export const streamDocument = httpAction(async (ctx, req) => {
               additionalPrompt: job.additionalPrompt,
             })
             .pipe(
-              Stream.tap((delta) =>
-                Effect.promise(() => chunkAppender(delta)),
-              ),
+              // Retry each model with exponential backoff, then fall back to the
+              // next (gemini → kimi → minimax). `preventFallbackOnPartialStream`
+              // stops a fallback once deltas have already reached the client, so
+              // the surviving stream is never contaminated with partial output.
+              Stream.withExecutionPlan(streamModelPlan, {
+                preventFallbackOnPartialStream: true,
+              }),
+              Stream.tap((delta) => Effect.promise(() => chunkAppender(delta))),
               Stream.runFold(
                 () => "",
                 (acc, delta) => acc + delta,

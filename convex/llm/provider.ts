@@ -1,5 +1,16 @@
-import { OpenRouterClient, OpenRouterLanguageModel } from "@effect/ai-openrouter";
-import { Config, ConfigProvider, Effect, Layer } from "effect";
+import {
+  OpenRouterClient,
+  OpenRouterLanguageModel,
+} from "@effect/ai-openrouter";
+import {
+  Config,
+  ConfigProvider,
+  Effect,
+  ExecutionPlan,
+  Layer,
+  Schedule,
+} from "effect";
+import type { AiError } from "effect/unstable/ai";
 import { FetchHttpClient } from "effect/unstable/http";
 import { MODELS } from "./models";
 
@@ -28,9 +39,31 @@ export const openRouterClientLayer = OpenRouterClient.layerConfig({
   Layer.provide(convexConfigProviderLayer),
 );
 
-// Adapts the OpenRouter client into the provider-agnostic `LanguageModel` service.
-// Swapping providers (or the model) means swapping this single layer — domain code
-// that depends on `LanguageModel` never changes.
-export const openRouterModelLayer = OpenRouterLanguageModel.layer({
-  model: MODELS["gemini-3.1-flash-preview"],
-}).pipe(Layer.provide(openRouterClientLayer));
+// Adapts one OpenRouter model into the provider-agnostic `LanguageModel` service.
+// The `OpenRouterClient` requirement is left unsatisfied so the shared client
+// (built once via `openRouterClientLayer`) is reused across every model in the
+// execution plan below, rather than each model opening its own.
+const modelLayer = (model: string) => OpenRouterLanguageModel.layer({ model });
+
+// Resilient strategy for streaming generation: attempt each model up to 3 times
+// with exponential backoff, then fall back to the next model in the chain.
+//   gemini → kimi → minimax
+// Applied with `Stream.withExecutionPlan`; consumers depend only on the abstract
+// `LanguageModel`, which each step provides for the duration of its attempt.
+const retryWithBackoff = {
+  attempts: 3,
+  schedule: Schedule.exponential("500 millis"),
+  // Only spend retries on transient failures (rate limits, network, provider
+  // 5xx). Non-retryable errors (auth, content policy, bad request) stop the
+  // step immediately and fall through to the next model in the chain.
+  while: (error: AiError.AiError) => error.isRetryable,
+} as const;
+
+export const streamModelPlan = ExecutionPlan.make(
+  {
+    provide: modelLayer(MODELS["gemini-3.1-flash-preview"]),
+    ...retryWithBackoff,
+  },
+  { provide: modelLayer(MODELS["kimi-k2.5"]), ...retryWithBackoff },
+  { provide: modelLayer(MODELS["minimax-m2.5"]), ...retryWithBackoff },
+);

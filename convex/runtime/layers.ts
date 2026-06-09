@@ -1,7 +1,7 @@
 import { type Config, Effect, Layer } from "effect";
 import { documentRepositoryLayer } from "../documents/repository";
 import { documentServiceLive } from "../documents/service";
-import { openRouterModelLayer } from "../llm/provider";
+import { openRouterClientLayer } from "../llm/provider";
 import { llmServiceLive } from "../llm/service";
 import { streamJobRepositoryLayer } from "../stream/repository";
 import { streamServiceLive } from "../stream/service";
@@ -19,7 +19,10 @@ export const backendLayer = (db: AnyDb) => {
   return services.pipe(Layer.provide(repositories));
 };
 
-export const llmLayer = Layer.mergeAll(llmServiceLive, openRouterModelLayer);
+// The shared OpenRouter client satisfies the `OpenRouterClient` requirement left
+// open by the per-model layers in `streamModelPlan`; the plan supplies the actual
+// `LanguageModel` per attempt via `Stream.withExecutionPlan`.
+export const llmLayer = Layer.mergeAll(llmServiceLive, openRouterClientLayer);
 
 export const runBackendEffect = <A, E, R>(
   db: AnyDb,
