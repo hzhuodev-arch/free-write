@@ -45,25 +45,24 @@ export const openRouterClientLayer = OpenRouterClient.layerConfig({
 // execution plan below, rather than each model opening its own.
 const modelLayer = (model: string) => OpenRouterLanguageModel.layer({ model });
 
-// Resilient strategy for streaming generation: attempt each model up to 3 times
-// with exponential backoff, then fall back to the next model in the chain.
-//   gemini → kimi → minimax
-// Applied with `Stream.withExecutionPlan`; consumers depend only on the abstract
-// `LanguageModel`, which each step provides for the duration of its attempt.
-const retryWithBackoff = {
-  attempts: 3,
-  schedule: Schedule.exponential("500 millis"),
-  // Only spend retries on transient failures (rate limits, network, provider
-  // 5xx). Non-retryable errors (auth, content policy, bad request) stop the
-  // step immediately and fall through to the next model in the chain.
-  while: (error: AiError.AiError) => error.isRetryable,
-} as const;
-
+// Execution plan with fallbacks to different providers on retryable errors.
 export const streamModelPlan = ExecutionPlan.make(
   {
     provide: modelLayer(MODELS["gemini-3.1-flash-preview"]),
-    ...retryWithBackoff,
+    attempts: 3,
+    schedule: Schedule.exponential("500 millis"),
+    while: (error: AiError.AiError) => error.isRetryable,
   },
-  { provide: modelLayer(MODELS["kimi-k2.5"]), ...retryWithBackoff },
-  { provide: modelLayer(MODELS["minimax-m2.5"]), ...retryWithBackoff },
+  {
+    provide: modelLayer(MODELS["kimi-k2.5"]),
+    attempts: 2,
+    schedule: Schedule.exponential("500 millis"),
+    while: (error: AiError.AiError) => error.isRetryable,
+  },
+  {
+    provide: modelLayer(MODELS["minimax-m2.5"]),
+    attempts: 2,
+    schedule: Schedule.fixed("500 millis"),
+    while: (error: AiError.AiError) => error.isRetryable,
+  },
 );
